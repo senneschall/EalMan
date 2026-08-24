@@ -38,8 +38,8 @@ public:
     std::vector<int32_t>        gemaSrcIDs{};
     std::vector<EMPoint>        gemaSources{};
     std::vector<int32_t>        gemaEnvObsMatrix{};
-    std::vector<SpatTreeNode>   gemaNode{};
-    std::vector<SpatTreeLeaf>   gemaLeaf{};
+    std::vector<SplitNode>      gemaBSPinnerNodes{};
+    std::vector<Zone>           gemaBSPouterNodes{};
     std::vector<DiffractionBox> gemaDiffBox{};
 
 public:

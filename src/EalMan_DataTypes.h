@@ -187,7 +187,7 @@ struct EAXDiffractionModel
     int32_t AngleMaxAttenuation{};   // EAGLE clips value into range 0 .. 90, so it cannot be derived with certainty if field is signed or unsigned
 };
 
-struct SpatTreeNode
+struct SplitNode
 {
     float    fX{};
     float    fY{};
@@ -195,15 +195,15 @@ struct SpatTreeNode
     float    fNormalX{};
     float    fNormalY{};
     float    fNormalZ{};
-    uint32_t uID{};
-    int32_t  iID{};
+    uint32_t childFront{};
+    uint32_t childBack{};
     uint32_t uAID{};
     uint32_t uBID{};
     int32_t  iCID{};
 };
 
-struct SpatTreeLeaf
+struct Zone
 {
-    uint32_t uAID{};
-    uint32_t uBID{};
+    int32_t indexObsID{};
+    int32_t indexEnvID{};
 };

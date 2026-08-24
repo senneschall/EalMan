@@ -20,6 +20,38 @@ inline static uint32_t to_u32_le(
            (uint32_t(static_cast<uint8_t>(a[3])) << 24 );
 }
 
+inline static float scalarProdukt(
+    float aX,
+    float aY,
+    float aZ,
+    float bX,
+    float bY,
+    float bZ
+)
+{
+    return (aX * bX + aY * bY + aZ * bZ);
+}
+
+inline static bool isInFront(
+    EMPoint point,
+    float fX,
+    float fY,
+    float fZ,
+    float nX,
+    float nY,
+    float nZ
+    )
+{
+    return scalarProdukt(
+        (point.fX - fX),
+        (point.fY - fY),
+        (point.fZ - fZ),
+        nX,
+        nY,
+        nZ
+    ) >= 0.0f;
+}
+
 template<typename T>
 int32_t readStruct(
         std::ifstream&   file,
@@ -280,8 +312,8 @@ int32_t EalMan::ReadGemaChunk(
     }
     if (!(nrEnvs > 0   && ReadArrayData(file, nrEnvs, m_data->gemaEnvIDs, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Env IDs
     if (!(nrEnvObsIdx > 0 && ReadArrayData(file, nrEnvObsIdx, m_data->gemaEnvObsMatrix, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Env-Obs-Matrix
-    if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaNode, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Plane tree
-    if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaLeaf, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Leaf tree
+    if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Plane tree
+    if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Leaf tree
 
     uint32_t nrDiffBox{};
     if (readNumber(file, nrDiffBox, bytesRead) !=toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
@@ -552,8 +584,8 @@ int32_t EalMan::GetDataSetSize(
     memsize += m_data->gemaSrcIDs.capacity() * sizeof(int32_t);
     memsize += m_data->gemaSources.capacity() * sizeof(EMPoint);
     memsize += m_data->gemaEnvObsMatrix.capacity() * sizeof(int32_t);
-    memsize += m_data->gemaNode.capacity() * sizeof(SpatTreeNode);
-    memsize += m_data->gemaLeaf.capacity() * sizeof(SpatTreeLeaf);
+    memsize += m_data->gemaBSPinnerNodes.capacity() * sizeof(SplitNode);
+    memsize += m_data->gemaBSPouterNodes.capacity() * sizeof(Zone);
     memsize += m_data->gemaDiffBox.capacity() * sizeof(DiffractionBox);
 
     if (memsize > std::numeric_limits<uint32_t>::max()) { sizeDataSet = 0; } // eal file larger than 4GB
@@ -763,16 +795,36 @@ int32_t EalMan::GetListenerDynamicAttributes(
 {
     envID = {};
     int32_t length = (int32_t)m_data->geoNames.size();
-    if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); }
+    //if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); } // all UT .eal files only have a single geometry set, so the selection is skipped for now
+    if (geomID != 0) { return toInt(EalError::IdNotFound); }
 
     if (lstPos.fX < -32768.0 || lstPos.fX > +32768.0
             || lstPos.fY < -32768.0 || lstPos.fY > +32768.0
             || lstPos.fZ < -32768.0 || lstPos.fZ > +32768.0)
     { return toInt(EalError::IdNotFound); }
 
-    /**
-     * TODO
-     */
+    SplitNode node{};
+    const uint32_t capacity{ m_data->gemaBSPinnerNodes.size() };
+    uint32_t child{0};
+    while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
+    {
+        if (child >= 0 && child < capacity )
+        { node = m_data->gemaBSPinnerNodes[child]; }
+        else { return toInt(EalError::IdNotFound); }
+
+        child = (isInFront(lstPos, node.fX, node.fY, node.fZ, node.fNormalX, node.fNormalY, node.fNormalZ))
+            ? node.childFront
+            : node.childBack;
+    }
+    child = child | 0x8FFFFFFF; // MSB unset to recover the índex of a Zone
+    if (child < 0 || child >= m_data->gemaBSPouterNodes.size())
+    { return toInt(EalError::IdNotFound); }
+    Zone zone = m_data->gemaBSPouterNodes[child];
+
+    if (zone.indexEnvID >= 0 && zone.indexEnvID < static_cast<int32_t>(m_data->gemaEnvIDs.size()))
+    { envID = m_data->gemaEnvIDs[zone.indexEnvID]; }
+    else
+    { envID = static_cast<int32_t>(EMFLAG_IDDEFAULT); }
 
     return toInt(EalError::OK);
 }

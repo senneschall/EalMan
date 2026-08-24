@@ -257,7 +257,7 @@ public:
      * @param lstPos [in] Current position of 3D listener
      * @param envID [out] ID to use for current environment
      * @param flags [in] Flags to use while getting attributes (currently unused)
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_IDNOTFOUND
      */
     int32_t GetListenerDynamicAttributes(
             const int32_t    geomID,
@@ -278,7 +278,7 @@ public:
      * @param srcOcclusionRM [out] Source occlusion room ratio attribute; Use this value to set DirectSound3D Buffer properties
      * @param virtPos [out] Virtual position to use for positioning sound (currently not implemented)
      * @param flags [in] Flags (currently unused)
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_IDNOTFOUND
      */
     int32_t GetSourceDynamicAttributes(
             const int32_t    geomID,
