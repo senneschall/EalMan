@@ -49,7 +49,7 @@ inline static bool isInFront(
         nX,
         nY,
         nZ
-    ) >= 0.0f;
+    ) >= 0.0f; // hier (tolerance) 1.0f * plane-thickness zählt laut Dekompilat der originalen EaxMan.dll zwar zur Ebene, wird aber praktisch zu "vor der Ebene" gerechnet
 }
 
 template<typename T>

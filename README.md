@@ -6,7 +6,7 @@ A cross-platform, architecture-independent reimplementation of Creative's *EaxMa
 
 **EalMan** is a library that decodes *.eal* files to get the EAX environment presets out.
 The aim is to provide the same functionality as the *EaxMan.dll* from *Creative's EAX patches* for *Unreal Tournament*.
-It uses the information aboud *.eal* file details explained in [senneschall/EAXManagerEAL](https://github.com/senneschall/EAXManagerEAL).
+It uses the information about *.eal* file details explained in [senneschall/EAXManagerEAL](https://github.com/senneschall/EAXManagerEAL).
 
 ### What it does
 
@@ -26,12 +26,8 @@ The same as EAXMan
 Compile with any C++17 compatible compiler.
 No further dependencies were introduced, by design.
 
-## Credits
+## License
 
-The source code for *PlayEalFiles* contains pieces from [openal-soft](https://github.com/kcat/openal-soft), which is licensed unter LGPL. Those pieces remain under the LGPL.
+The aim of this project is to enable those lovely *EAX* effects on as many games as possible. This means, it must be integrated into a patch/mod/remake of those games. Many thanks to everybody who contributes to patches for those old games.
 
-Other pieces are heavily derived from the RIFF decoder and information [RIFF File Structure](https://johnloomis.org/cpe102/asgn/asgn1/riff.html)
-
-Another helpful resource in making *PlayEalFiles* work was the [OpenAL short example](https://ffainelli.github.io/openal-example/)
-
-And a final shoutout and thanks to *Createive* for those *EAX patches*, the folks behind *websound.ru* who saved those old SDKs. And to the contributors of [OldUnreal/UnrealTournamentPatches](https://github.com/OldUnreal/UnrealTournamentPatches) who keep this game alive.
+If there is any chance that **EalMan** can help in any way, please use it. If the license is of any problem, do not hesitate to contact me. We'll find a way.
