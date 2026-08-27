@@ -20,7 +20,7 @@ inline static uint32_t to_u32_le(
            (uint32_t(static_cast<uint8_t>(a[3])) << 24 );
 }
 
-inline static float scalarProdukt(
+inline static float scalarProduct(
     float aX,
     float aY,
     float aZ,
@@ -42,14 +42,20 @@ inline static bool isInFront(
     float nZ
     )
 {
-    return scalarProdukt(
+    /*
+     * EaxMan.dll selects Front if scalarProduct >= 0 and Back otherwise
+     * it also checks if the point is within a factor x thickness of the wall. Both values are hardcoded inside EaxMan.dll to be 1.0f and can't be overwritten by data inside a .eal
+     * if the point is within this are, EaxMan.dll returns the Front child
+     * this can be simplified to the single expression implemented here
+     */
+    return scalarProduct(
         (point.fX - fX),
         (point.fY - fY),
         (point.fZ - fZ),
         nX,
         nY,
         nZ
-    ) >= 0.0f; // hier (tolerance) 1.0f * plane-thickness zählt laut Dekompilat der originalen EaxMan.dll zwar zur Ebene, wird aber praktisch zu "vor der Ebene" gerechnet
+    ) >= -1.0f;
 }
 
 template<typename T>
@@ -702,6 +708,11 @@ int32_t EalMan::GetSourceAttributes(
         SourceAttributes&   srcAttributes
         ) const
 {
+    if (srcID == -1)
+    {
+        srcAttributes = m_data->defSource;
+        return toInt(EalError::OK);
+    }
     return GetAttributes(srcID, srcAttributes, m_data->sources);
 }
 
@@ -759,6 +770,11 @@ int32_t EalMan::GetEnvironmentAttributes(
         EAXListenerProperties&   envAttributes
         ) const
 {
+    if (envID == -1)
+    {
+        envAttributes = m_data->defEnvironment;
+        return toInt(EalError::OK);
+    }
     return GetAttributes(envID, envAttributes, m_data->environments);
 }
 
@@ -775,6 +791,11 @@ int32_t EalMan::GetMaterialAttributes(
         MaterialAttributes&   matAttributes
         ) const
 {
+    if (matID == -1)
+    {
+        matAttributes = m_data->defObstacle;
+        return toInt(EalError::OK);
+    }
     return GetAttributes(matID, matAttributes, m_data->obstacles);
 }
 
@@ -794,7 +815,7 @@ int32_t EalMan::GetListenerDynamicAttributes(
         ) const
 {
     envID = {};
-    int32_t length = (int32_t)m_data->geoNames.size();
+    //int32_t length = (int32_t)m_data->geoNames.size();
     //if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); } // all UT .eal files only have a single geometry set, so the selection is skipped for now
     if (geomID != 0) { return toInt(EalError::IdNotFound); }
 
@@ -804,11 +825,11 @@ int32_t EalMan::GetListenerDynamicAttributes(
     { return toInt(EalError::IdNotFound); }
 
     SplitNode node{};
-    const uint32_t capacity{ m_data->gemaBSPinnerNodes.size() };
+    const uint32_t capacity = static_cast<uint32_t>(m_data->gemaBSPinnerNodes.size());
     uint32_t child{0};
     while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
     {
-        if (child >= 0 && child < capacity )
+        if (child < capacity )
         { node = m_data->gemaBSPinnerNodes[child]; }
         else { return toInt(EalError::IdNotFound); }
 
@@ -816,8 +837,8 @@ int32_t EalMan::GetListenerDynamicAttributes(
             ? node.childFront
             : node.childBack;
     }
-    child = child | 0x8FFFFFFF; // MSB unset to recover the índex of a Zone
-    if (child < 0 || child >= m_data->gemaBSPouterNodes.size())
+    child &= 0x7FFFFFFF; // MSB unset to recover the índex of a Zone
+    if (child >= m_data->gemaBSPouterNodes.size())
     { return toInt(EalError::IdNotFound); }
     Zone zone = m_data->gemaBSPouterNodes[child];
 
