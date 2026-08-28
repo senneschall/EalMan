@@ -108,14 +108,9 @@ static int32_t ReadArrayData(
         uint32_t&         bytesRead
         )
 {
-    dest.reserve(dest.size() + count);
-    for (uint32_t i = 0; i < count; i++)
-    {
-        T structData{};
-        if (!file.read(reinterpret_cast<char*>(&structData), sizeof(T))) { return toInt(EalError::VersionInvalid); }
-        bytesRead += sizeof(T);
-        dest.push_back(structData);
-    }
+    dest.resize(count);
+    if (!file.read(reinterpret_cast<char*>(dest.data()), dest.size() * sizeof(T))) { return toInt(EalError::VersionInvalid); }
+    bytesRead += dest.size() * sizeof(T);
     return toInt(EalError::OK);
 }
 /*
@@ -309,7 +304,7 @@ int32_t EalMan::ReadGemaChunk(
         || readNumber(file, nrLeaves, bytesRead)  != toInt(EalError::OK))
     { return toInt(EalError::FileInvalid); }
 
-    uint32_t nrEnvObsIdx = (nrEnvs + 1) * (nrEnvs + 2) - 1;
+    uint32_t envMatrixSize = (nrEnvs + 1) * (nrEnvs + 1);
 
     if (nrSrcs > 0) // sources are optional
     {
@@ -317,7 +312,8 @@ int32_t EalMan::ReadGemaChunk(
         if (ReadArrayData(file, nrSrcs, m_data->gemaSources, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); } // Source Pos
     }
     if (!(nrEnvs > 0   && ReadArrayData(file, nrEnvs, m_data->gemaEnvIDs, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Env IDs
-    if (!(nrEnvObsIdx > 0 && ReadArrayData(file, nrEnvObsIdx, m_data->gemaEnvObsMatrix, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Env-Obs-Matrix
+    if (!(nrEnvs > 0 && ReadArrayData(file, nrEnvs, m_data->gemaDiffraction, bytesRead) == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Diffraction
+    if (!(envMatrixSize > 1 && ReadArrayData(file, envMatrixSize, m_data->gemaEnvironmentMatrix, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Environment Matrix
     if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Plane tree
     if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Leaf tree
 
@@ -589,7 +585,8 @@ int32_t EalMan::GetDataSetSize(
     memsize += m_data->gemaEnvIDs.capacity() * sizeof(int32_t);
     memsize += m_data->gemaSrcIDs.capacity() * sizeof(int32_t);
     memsize += m_data->gemaSources.capacity() * sizeof(EMPoint);
-    memsize += m_data->gemaEnvObsMatrix.capacity() * sizeof(int32_t);
+    memsize += m_data->gemaDiffraction.capacity() * sizeof(int32_t);
+    memsize += m_data->gemaEnvironmentMatrix.capacity() * m_data->gemaEnvironmentMatrix.capacity() * sizeof(int32_t);
     memsize += m_data->gemaBSPinnerNodes.capacity() * sizeof(SplitNode);
     memsize += m_data->gemaBSPouterNodes.capacity() * sizeof(Zone);
     memsize += m_data->gemaDiffBox.capacity() * sizeof(DiffractionBox);
@@ -880,7 +877,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
     // If no geometry/matrix is available, simply return "OK" with the default values
     const int32_t nrEnvs = static_cast<int32_t>(m_data->gemaEnvIDs.size());
-    if (nrEnvs <= 0 || m_data->gemaEnvObsMatrix.empty() || m_data->obstacles.empty())
+    if (nrEnvs <= 0 || m_data->gemaEnvironmentMatrix.empty() || m_data->obstacles.empty())
     {
         return toInt(EalError::OK);
     }
@@ -889,7 +886,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
     const int32_t rowLength = nrEnvs + 2;
     const int32_t rowStart = geomID * rowLength;
 
-    if (rowStart < 0 || rowStart >= static_cast<int32_t>(m_data->gemaEnvObsMatrix.size()))
+    if (rowStart < 0 || rowStart >= static_cast<int32_t>(m_data->gemaEnvironmentMatrix.size()))
     {
         return toInt(EalError::OK); // no valid data for this geometry
     }
@@ -904,12 +901,12 @@ int32_t EalMan::GetSourceDynamicAttributes(
     for (int32_t col = 0; col < rowLength; col++)
     {
         const int32_t idx = rowStart + col;
-        if (idx < 0 || idx >= static_cast<int32_t>(m_data->gemaEnvObsMatrix.size()))
+        if (idx < 0 || idx >= static_cast<int32_t>(m_data->gemaEnvironmentMatrix.size()))
         {
             break;
         }
 
-        const int32_t matID = m_data->gemaEnvObsMatrix[idx];
+        const int32_t matID = m_data->gemaEnvironmentMatrix[idx];
         if (matID < 0 || matID >= static_cast<int32_t>(m_data->obstacles.size()))
         {
             continue; // no valid obstacle at this location

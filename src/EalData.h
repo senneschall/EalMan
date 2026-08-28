@@ -37,7 +37,8 @@ public:
     std::vector<int32_t>        gemaEnvIDs{};
     std::vector<int32_t>        gemaSrcIDs{};
     std::vector<EMPoint>        gemaSources{};
-    std::vector<int32_t>        gemaEnvObsMatrix{};
+    std::vector<int32_t>        gemaDiffraction{};
+    std::vector<int32_t>        gemaEnvironmentMatrix{};
     std::vector<SplitNode>      gemaBSPinnerNodes{};
     std::vector<Zone>           gemaBSPouterNodes{};
     std::vector<DiffractionBox> gemaDiffBox{};
