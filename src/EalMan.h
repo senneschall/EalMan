@@ -9,7 +9,12 @@
 class EalMan
 {
 private:
-    std::unique_ptr<EalData> m_data;
+    /* organized data read from an .eal file */
+    std::unique_ptr<EalData> m_data{};
+    /* buffered listener position */
+    EMPoint                  m_listenerPosition{};
+    /* buffered environment the listener position is in */
+    uint32_t                 m_listenerEnvIDIndex{};
 
     int32_t EalGlobals(
             std::ifstream&   file,
@@ -256,7 +261,7 @@ public:
      * @param geomID [in] ID of geometry set to use, if only one geometry set is used, specify zero
      * @param lstPos [in] Current position of 3D listener
      * @param envID [out] ID to use for current environment
-     * @param flags [in] Flags to use while getting attributes (currently unused)
+     * @param flags [in] Flags to use while getting attributes - EMFLAG_LOCKPOSITION saves the lstPos for subsequent use in GetSourceDynamicAttributes()
      * @return EM_OK, EM_IDNOTFOUND
      */
     int32_t GetListenerDynamicAttributes(
@@ -264,7 +269,7 @@ public:
             const EMPoint&   lstPos,
             int32_t&         envID,
             const uint32_t   flags
-            ) const;
+            );
 
     /**
      * @brief returns the attributes that change dynamically for a source, given a geometry set and its position

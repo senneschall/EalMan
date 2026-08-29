@@ -368,7 +368,7 @@ int32_t EalMan::GetAttributes(
         ) const
 {
     attributes = {};
-    int32_t length = (int32_t)dataset.size();
+    int32_t length = static_cast<int32_t>(dataset.size());
     if (id < 0 || id >= length) { return toInt(EalError::InvalidId); }
 
     attributes = dataset[id]; // boundary check above
@@ -719,7 +719,7 @@ int32_t EalMan::GetSourceNumInstances(
         ) const
 {
     srcInstances = {};
-    int32_t length = (int32_t)m_data->sources.size();
+    int32_t length = static_cast<int32_t>(m_data->sources.size());
     if (srcID < 0 || srcID >= length) { return toInt(EalError::InvalidId); }
 
     srcInstances = std::count(m_data->gemaSrcIDs.begin(), m_data->gemaSrcIDs.end(), srcID);
@@ -808,8 +808,8 @@ int32_t EalMan::GetListenerDynamicAttributes(
         const int32_t    geomID,
         const EMPoint&   lstPos,
         int32_t&         envID,
-        [[maybe_unused]] const uint32_t flags
-        ) const
+        const uint32_t   flags
+        )
 {
     envID = {};
     //int32_t length = (int32_t)m_data->geoNames.size();
@@ -844,6 +844,20 @@ int32_t EalMan::GetListenerDynamicAttributes(
     else
     { envID = static_cast<int32_t>(EMFLAG_IDDEFAULT); }
 
+    if (flags == EMFLAG_LOCKPOSITION)
+    {
+        m_listenerPosition = lstPos;
+        m_listenerEnvIDIndex = EMFLAG_IDDEFAULT;
+        for (uint32_t i = 0; i < m_data->gemaEnvIDs.size(); i++)
+        {
+            if (m_data->gemaEnvIDs[i] == envID)
+            {
+                m_listenerEnvIDIndex = i;
+                break;
+            }
+        }
+    }
+
     return toInt(EalError::OK);
 }
 
@@ -867,7 +881,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
     srcOcclusionRM = {};
     virtPos = {}; // not implemented in EAX Manager either
 
-    int32_t length = (int32_t)m_data->geoNames.size();
+    int32_t length = static_cast<int32_t>(m_data->geoNames.size());
     if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); }
 
     if (srcPos.fX < -32768.0 || srcPos.fX > +32768.0
