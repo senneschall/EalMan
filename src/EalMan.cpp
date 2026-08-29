@@ -862,24 +862,24 @@ int32_t EalMan::GetListenerDynamicAttributes(
 }
 
 int32_t EalMan::GetSourceDynamicAttributes(
-        const int32_t                     geomID,
-        const EMPoint&                    srcPos,
-        int32_t&                          srcObstruction,
-        float&                            srcObstructionLF,
-        int32_t&                          srcOcclusion,
-        float&                            srcOcclusionLF,
-        float&                            srcOcclusionRM,
-        EMPoint&                          virtPos,
-        [[maybe_unused]] const uint32_t   flags
-        ) const
+        const int32_t    geomID,
+        const EMPoint&   srcPos,
+        int32_t&         srcObstruction,
+        float&           srcObstructionLF,
+        int32_t&         srcOcclusion,
+        float&           srcOcclusionLF,
+        float&           srcOcclusionRM,
+        EMPoint&         virtPos,
+        const uint32_t   flags
+        )
 {
     // defaults
-    srcObstruction = {};
-    srcObstructionLF = {};
-    srcOcclusion = {};
-    srcOcclusionLF = {};
-    srcOcclusionRM = {};
-    virtPos = {}; // not implemented in EAX Manager either
+    srcObstruction = {0};
+    srcObstructionLF = {0.0f};
+    srcOcclusion = {0};
+    srcOcclusionLF = {0.25f};
+    srcOcclusionRM = {0.5f};
+    virtPos = srcPos; // not implemented in EAX Manager either
 
     int32_t length = static_cast<int32_t>(m_data->geoNames.size());
     if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); }
@@ -889,76 +889,66 @@ int32_t EalMan::GetSourceDynamicAttributes(
             || srcPos.fZ < -32768.0 || srcPos.fZ > +32768.0)
     { return toInt(EalError::IdNotFound); }
 
-    // If no geometry/matrix is available, simply return "OK" with the default values
-    const int32_t nrEnvs = static_cast<int32_t>(m_data->gemaEnvIDs.size());
-    if (nrEnvs <= 0 || m_data->gemaEnvironmentMatrix.empty() || m_data->obstacles.empty())
+    int32_t envID_srcPos{};
+    uint32_t src_EnvIDIndex{EMFLAG_IDDEFAULT};
+    if (GetListenerDynamicAttributes(geomID, srcPos, envID_srcPos, 0) == toInt(EalError::OK))
+    {
+        for (uint32_t i = 0; i < m_data->gemaEnvIDs.size(); i++)
+        {
+            if (m_data->gemaEnvIDs[i] == envID_srcPos)
+            {
+                src_EnvIDIndex = i;
+                break;
+            }
+        }
+    }
+
+    const int32_t obsID = m_data->gemaEnvironmentMatrix[
+        (m_data->gemaEnvIDs.size() + 1) * (m_listenerEnvIDIndex + 1) //row (nrEnv + 1) * (lstPosID + 1) -- lstPosID starts with EMFLAG_IDDEFAULT=-1
+            + src_EnvIDIndex // column
+    ];
+
+    if (obsID > EMFLAG_IDNONE)
+    {
+        if (obsID >= 0 && obsID < static_cast<int32_t>(m_data->obstacles.size()))
+        {
+            if (m_data->obstacles[obsID].dwFlags == EMMATERIAL_OBSTRUCTS)
+            {
+                srcObstruction = m_data->obstacles[obsID].lLevel;
+                srcObstructionLF = m_data->obstacles[obsID].fLFRatio;
+            }
+            else
+            {
+                srcOcclusion = m_data->obstacles[obsID].lLevel;
+                srcOcclusionLF = m_data->obstacles[obsID].fLFRatio;
+                srcOcclusionRM = m_data->obstacles[obsID].fRoomRatio;
+            }
+        }
+        else // default Obstacle
+        {
+            if (m_data->defObstacle.dwFlags == EMMATERIAL_OBSTRUCTS)
+            {
+                srcObstruction = m_data->defObstacle.lLevel;
+                srcObstructionLF = m_data->defObstacle.fLFRatio;
+            }
+            else
+            {
+                srcOcclusion = m_data->defObstacle.lLevel;
+                srcOcclusionLF = m_data->defObstacle.fLFRatio;
+                srcOcclusionRM = m_data->defObstacle.fRoomRatio;
+            }
+        }
+    }
+
+    if ((flags & EMFLAG_NODIFFRACTION) != 0)
     {
         return toInt(EalError::OK);
     }
 
-    // we interpret geomID as the "current environment row"
-    const int32_t rowLength = nrEnvs + 2;
-    const int32_t rowStart = geomID * rowLength;
-
-    if (rowStart < 0 || rowStart >= static_cast<int32_t>(m_data->gemaEnvironmentMatrix.size()))
+    if (m_listenerEnvIDIndex == static_cast<uint32_t>(src_EnvIDIndex)) // source and listener in the same environment
     {
-        return toInt(EalError::OK); // no valid data for this geometry
+
     }
-
-    // we collect the "strongest" effect along the row for this geomID
-    int32_t bestObstruction{};
-    float   bestObstructionLF{};
-    int32_t bestOcclusion{};
-    float   bestOcclusionLF{};
-    float   bestOcclusionRM{};
-
-    for (int32_t col = 0; col < rowLength; col++)
-    {
-        const int32_t idx = rowStart + col;
-        if (idx < 0 || idx >= static_cast<int32_t>(m_data->gemaEnvironmentMatrix.size()))
-        {
-            break;
-        }
-
-        const int32_t matID = m_data->gemaEnvironmentMatrix[idx];
-        if (matID < 0 || matID >= static_cast<int32_t>(m_data->obstacles.size()))
-        {
-            continue; // no valid obstacle at this location
-        }
-
-        const MaterialAttributes& ma = m_data->obstacles[matID];
-
-        // incorporate the global diffraction model: we clip the level and scale the LF ratio
-        const int32_t clippedLevel = std::min(ma.lLevel, m_data->gdfm.MaxAttenuation);
-        const float   lfScaled = ma.fLFRatio * m_data->gdfm.LFRatio;
-        const float   roomScaled = ma.fRoomRatio; // maybe also include gdfm.AngleMaxAttenuation
-
-        if (ma.dwFlags & EMMATERIAL_OBSTRUCTS)
-        {
-            if (std::abs(clippedLevel) > std::abs(bestObstruction))
-            {
-                bestObstruction = clippedLevel;
-                bestObstructionLF = lfScaled;
-            }
-        }
-
-        if (ma.dwFlags & EMMATERIAL_OCCLUDES)
-        {
-            if (std::abs(clippedLevel) > std::abs(bestOcclusion))
-            {
-                bestOcclusion = clippedLevel;
-                bestOcclusionLF = lfScaled;
-                bestOcclusionRM = roomScaled;
-            }
-        }
-    }
-
-    // return results
-    srcObstruction   = bestObstruction;
-    srcObstructionLF = bestObstructionLF;
-    srcOcclusion     = bestOcclusion;
-    srcOcclusionLF   = bestOcclusionLF;
-    srcOcclusionRM   = bestOcclusionRM;
 
     return toInt(EalError::OK);
 }

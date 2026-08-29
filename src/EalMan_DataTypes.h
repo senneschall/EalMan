@@ -197,13 +197,13 @@ struct SplitNode
     float    fNormalZ{};
     uint32_t childFront{};
     uint32_t childBack{};
-    uint32_t uAID{};
-    uint32_t uBID{};
-    int32_t  iCID{};
+    uint32_t notUsedA{};
+    uint32_t notUsedB{};
+    int32_t  notUsedC{};
 };
 
 struct Zone
 {
-    int32_t indexObsID{};
+    int32_t notUsed{};
     int32_t indexEnvID{};
 };

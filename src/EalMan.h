@@ -295,6 +295,6 @@ public:
             float&           srcOcclusionRM,
             EMPoint&         virtPos,
             const uint32_t   flags
-            ) const;
+            );
 
 };
