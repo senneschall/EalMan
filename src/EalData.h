@@ -34,6 +34,10 @@ public:
     //std::vector<std::string> geomFileNames; // optional file names only useful for EAGLE editor
 
     // GEMA Chunk info
+    uint32_t gemaNrSrcIDs{};
+    uint32_t gemaNrEnvIDs{};
+    uint32_t gemaNrInnerNodes{};
+    uint32_t gemaNrOuterNodes{};
     std::vector<int32_t>        gemaEnvIDs{};
     std::vector<int32_t>        gemaSrcIDs{};
     std::vector<EMPoint>        gemaSources{};

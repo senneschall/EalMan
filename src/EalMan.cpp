@@ -317,6 +317,11 @@ int32_t EalMan::ReadGemaChunk(
     if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Plane tree
     if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Leaf tree
 
+    m_data->gemaNrSrcIDs = nrSrcs;
+    m_data->gemaNrEnvIDs = nrEnvs;
+    m_data->gemaNrInnerNodes = nrPlanes;
+    m_data->gemaNrOuterNodes = nrLeaves;
+
     uint32_t nrDiffBox{};
     if (readNumber(file, nrDiffBox, bytesRead) !=toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
     if (nrDiffBox > 0) // diffraction boxes are optional
@@ -330,7 +335,8 @@ int32_t EalMan::ReadGemaChunk(
     if (  (1 + nrSrcs      * 4 ) * 4  // each sources struct has 4 members (one index, 3 coordinates); plus nrSrcs; each 4 bytes
         + (1 + nrEnvs      * 1 ) * 4  // each environment struct has 1 member; plus nrEnvs; each 4 bytes
         + (1 + nrUnknown   * 1 ) * 4  // unknown number 4 bytes
-        + (0 + nrEnvObsIdx * 1 ) * 4  // matrix consists ofh 4 bytes indizes
+        + (0 + nrEnvs      * 1 ) * 4  // diffraction matrix consists of 4 bytes indizes
+        + (0 + nrEnvObsIdx * 1 ) * 4  // environment matrix consists of 4 bytes indizes
         + (1 + nrPlanes    * 11) * 4  // each NodeA struct has 11 members; plus nrNodeA; each 4 bytes
         + (1 + nrLeaves    * 2 ) * 4  // each NodeB struct has 2 members; plus nrNodeB; each 4 bytes
         + (1 + nrDiffBox   * 7 ) * 4  // each Unknown struct has 7 members; plus nrUnkown; each 4 bytes
@@ -737,10 +743,10 @@ int32_t EalMan::GetSourceInstancePos(
     int32_t srcInst{};
     if (GetSourceNumInstances(srcID, srcInst) != toInt(EalError::OK)) { return toInt(EalError::InvalidId); } // already checks if srcID is valid
     if (srcInstance < 0 || srcInstance >= srcInst) { return toInt(EalError::InvalidId); }
-    //if (m_data->gemaSources.size < m_data->gemaSrcIDs.size()) { return toInt(EalError::InvalidId); } // not needed as long as a failing LoadDataSet() is handled by the user
+    //if (m_data->gemaSources.size < m_data->gemaNrSrcIDs) { return toInt(EalError::InvalidId); } // not needed as long as a failing LoadDataSet() is handled by the user
 
     int32_t cnt{};
-    for (uint32_t i = 0; i < m_data->gemaSrcIDs.size(); i++)
+    for (uint32_t i = 0; i < m_data->gemaNrSrcIDs; i++)
     {
         if (m_data->gemaSrcIDs[i] == srcID) // loop does boundary check here
         {
@@ -822,11 +828,10 @@ int32_t EalMan::GetListenerDynamicAttributes(
     { return toInt(EalError::IdNotFound); }
 
     SplitNode node{};
-    const uint32_t capacity = static_cast<uint32_t>(m_data->gemaBSPinnerNodes.size());
     uint32_t child{0};
     while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
     {
-        if (child < capacity )
+        if (child < m_data->gemaNrInnerNodes )
         { node = m_data->gemaBSPinnerNodes[child]; }
         else { return toInt(EalError::IdNotFound); }
 
@@ -835,11 +840,11 @@ int32_t EalMan::GetListenerDynamicAttributes(
             : node.childBack;
     }
     child &= 0x7FFFFFFF; // MSB unset to recover the índex of a Zone
-    if (child >= m_data->gemaBSPouterNodes.size())
+    if (child >= m_data->gemaNrOuterNodes)
     { return toInt(EalError::IdNotFound); }
     Zone zone = m_data->gemaBSPouterNodes[child];
 
-    if (zone.indexEnvID >= 0 && zone.indexEnvID < static_cast<int32_t>(m_data->gemaEnvIDs.size()))
+    if (zone.indexEnvID >= 0 && zone.indexEnvID < static_cast<int32_t>(m_data->gemaNrEnvIDs))
     { envID = m_data->gemaEnvIDs[zone.indexEnvID]; }
     else
     { envID = static_cast<int32_t>(EMFLAG_IDDEFAULT); }
@@ -848,7 +853,7 @@ int32_t EalMan::GetListenerDynamicAttributes(
     {
         m_listenerPosition = lstPos;
         m_listenerEnvIDIndex = EMFLAG_IDDEFAULT;
-        for (uint32_t i = 0; i < m_data->gemaEnvIDs.size(); i++)
+        for (uint32_t i = 0; i < m_data->gemaNrEnvIDs; i++)
         {
             if (m_data->gemaEnvIDs[i] == envID)
             {
@@ -893,7 +898,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
     uint32_t src_EnvIDIndex{EMFLAG_IDDEFAULT};
     if (GetListenerDynamicAttributes(geomID, srcPos, envID_srcPos, 0) == toInt(EalError::OK))
     {
-        for (uint32_t i = 0; i < m_data->gemaEnvIDs.size(); i++)
+        for (uint32_t i = 0; i < m_data->gemaNrEnvIDs; i++)
         {
             if (m_data->gemaEnvIDs[i] == envID_srcPos)
             {
@@ -904,11 +909,11 @@ int32_t EalMan::GetSourceDynamicAttributes(
     }
 
     const int32_t obsID = m_data->gemaEnvironmentMatrix[
-        (m_data->gemaEnvIDs.size() + 1) * (m_listenerEnvIDIndex + 1) //row (nrEnv + 1) * (lstPosID + 1) -- lstPosID starts with EMFLAG_IDDEFAULT=-1
+        (m_data->gemaNrEnvIDs + 1) * (m_listenerEnvIDIndex + 1) //row (nrEnv + 1) * (lstPosID + 1) -- lstPosID starts with EMFLAG_IDDEFAULT=-1
             + src_EnvIDIndex // column
     ];
 
-    if (obsID > EMFLAG_IDNONE)
+    if (obsID > static_cast<int32_t>(EMFLAG_IDNONE))
     {
         if (obsID >= 0 && obsID < static_cast<int32_t>(m_data->obstacles.size()))
         {
