@@ -22,6 +22,9 @@ public:
     //std::array<char, 260> defCmds{}; // optional file name only useful for EAGLE editor
 
     // Parsed datasets
+    uint32_t nrEnvironments{};
+    uint32_t nrSources{};
+    uint32_t nrObstacles{};
     std::vector<EAXListenerProperties> environments{};
     std::vector<SourceAttributes>      sources{};
     std::vector<MaterialAttributes>    obstacles{};
@@ -38,6 +41,7 @@ public:
     uint32_t gemaNrEnvIDs{};
     uint32_t gemaNrInnerNodes{};
     uint32_t gemaNrOuterNodes{};
+    uint32_t gemaNrDiffBox{};
     std::vector<int32_t>        gemaEnvIDs{};
     std::vector<int32_t>        gemaSrcIDs{};
     std::vector<EMPoint>        gemaSources{};

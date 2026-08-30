@@ -191,11 +191,13 @@ int32_t EalMan::EalList(
     return toInt(EalError::OK);
 }
 
-uint32_t EalMan::ReadNumsChunk(
+int32_t EalMan::ReadNumsChunk(
         std::ifstream&   file,
+        uint32_t&        count,
         uint32_t&        bytesRead
         )
 {
+    count = {};
     Chunk num{};
     if (num.read(file) == toInt(EalError::OK))
     {
@@ -206,7 +208,8 @@ uint32_t EalMan::ReadNumsChunk(
     std::array<char, 4> nums{};
     if (!file.read(nums.data(), nums.size())) { return toInt(EalError::VersionInvalid); }
     bytesRead += nums.size();
-    return to_u32_le(nums);
+    count = to_u32_le(nums);
+    return toInt(EalError::OK);
 }
 
 int32_t EalMan::ReadNamsChunk(
@@ -326,6 +329,7 @@ int32_t EalMan::ReadGemaChunk(
     if (readNumber(file, nrDiffBox, bytesRead) !=toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
     if (nrDiffBox > 0) // diffraction boxes are optional
     {
+        m_data->gemaNrDiffBox = nrDiffBox;
         if (ReadArrayData(file, nrDiffBox, m_data->gemaDiffBox, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
     }
 
@@ -344,6 +348,7 @@ int32_t EalMan::ReadGemaChunk(
     { return toInt(EalError::FileInvalid); }
      */
 
+    //if (isGEMAdataPlausible()) { toInt(EalError::FileInvalid); }
     return toInt(EalError::OK);
 }
 
@@ -369,12 +374,12 @@ int32_t EalMan::GetID(
 template <typename T>
 int32_t EalMan::GetAttributes(
         const int32_t     id,
+        const int32_t     length,
         T&                attributes,
         std::vector<T>&   dataset
         ) const
 {
     attributes = {};
-    int32_t length = static_cast<int32_t>(dataset.size());
     if (id < 0 || id >= length) { return toInt(EalError::InvalidId); }
 
     attributes = dataset[id]; // boundary check above
@@ -388,13 +393,17 @@ int32_t EalMan::EalEnvironmentAttributes(
         uint32_t&                                               bytesRead
         )
 {
-    uint32_t count = ReadNumsChunk(file, bytesRead);
-    if (count > 0)
+    uint32_t nums{};
+    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    if (res != toInt(EalError::OK))
+    { return res; }
+    m_data->nrEnvironments = nums;
+    if (m_data->nrEnvironments > 0)
     {
-        if (ReadNamsChunk(file, count, m_data->envNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadNamsChunk(file, m_data->nrEnvironments, m_data->envNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
         reqFourCC.set(static_cast<uint32_t>(FourCCreq::ENVP_NAMS));
 
-        if (ReadDataChunk(file, count, FourCC::LISP, m_data->environments, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadDataChunk(file, m_data->nrEnvironments, FourCC::LISP, m_data->environments, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
         reqFourCC.set(static_cast<uint32_t>(FourCCreq::ENVP_LISP));
         if (!isLISPdataPlausible()) { return toInt(EalError::FileInvalid); }
     }
@@ -406,12 +415,16 @@ int32_t EalMan::EalObstacleAttributes(
         uint32_t&        bytesRead
         )
 {
-    uint32_t count = ReadNumsChunk(file, bytesRead);
-    if (count > 0)
+    uint32_t nums{};
+    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    if (res != toInt(EalError::OK))
+    { return res; }
+    m_data->nrObstacles = nums;
+    if (m_data->nrObstacles > 0)
     {
-        if (ReadNamsChunk(file, count, m_data->obsNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadNamsChunk(file, m_data->nrObstacles, m_data->obsNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
 
-        if (ReadDataChunk(file, count, FourCC::MATA, m_data->obstacles, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadDataChunk(file, m_data->nrObstacles, FourCC::MATA, m_data->obstacles, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
         if (!isMATAdataPlausible()) { return toInt(EalError::FileInvalid); }
     }
     return toInt(EalError::OK);
@@ -422,16 +435,20 @@ int32_t EalMan::EalSourceAttributes(
         uint32_t&        bytesRead
         )
 {
-    uint32_t count = ReadNumsChunk(file, bytesRead);
-    if (count > 0)
+    uint32_t nums{};
+    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    if (res != toInt(EalError::OK))
+    { return res; }
+    m_data->nrSources = nums;
+    if (m_data->nrSources > 0)
     {
-        if (ReadNamsChunk(file, count, m_data->srcNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadNamsChunk(file, m_data->nrSources, m_data->srcNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
 
         //if (ReadFilsChunk(file, count, m_data->srcFileNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        file.ignore(8 + static_cast<std::streamsize>(count) * 260); // 8 bytes chunk + 260 bytes each string
-		bytesRead += 8 + count * 260;
+        file.ignore(8 + static_cast<std::streamsize>(m_data->nrSources) * 260); // 8 bytes chunk + 260 bytes each string
+		bytesRead += 8 + m_data->nrSources * 260;
 
-        if (ReadDataChunk(file, count, FourCC::SRCA, m_data->sources, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadDataChunk(file, m_data->nrSources, FourCC::SRCA, m_data->sources, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
         if (!isSRCAdataPlausible()) { return toInt(EalError::FileInvalid); }
     }
     return toInt(EalError::OK);
@@ -443,15 +460,18 @@ int32_t EalMan::EalGeometryAttributes(
         uint32_t&                                               bytesRead
         )
 {
-    uint32_t count = ReadNumsChunk(file, bytesRead);
-    if (count > 0)
+    uint32_t nums{};
+    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    if (res != toInt(EalError::OK))
+    { return res; }
+    if (nums > 0)
     {
-        if (ReadNamsChunk(file, count, m_data->geoNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        if (ReadNamsChunk(file, nums, m_data->geoNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
         reqFourCC.set(static_cast<uint32_t>(FourCCreq::GEMP_NAMS));
 
         //if (ReadFilsChunk(file, count, m_data->geomFileNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        file.ignore(8 + static_cast<std::streamsize>(count) * 260); // 8 bytes chunk + 260 bytes each string
-		bytesRead += 8 + count * 260;
+        file.ignore(8 + static_cast<std::streamsize>(nums) * 260); // 8 bytes chunk + 260 bytes each string
+		bytesRead += 8 + nums * 260;
 
         if (ReadGemaChunk(file, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
         reqFourCC.set(static_cast<uint32_t>(FourCCreq::GEMP_GEMA));
@@ -549,6 +569,94 @@ bool EalMan::isSRCAdataPlausible() const
                 && std::isfinite(sa.fMaxDistance)
                 ;
     }
+    return plausible;
+}
+
+bool EalMan::isGEMAdataPlausible() const
+{
+    bool plausible{true};
+    plausible = plausible
+            && (m_data->gemaNrSrcIDs == m_data->gemaSrcIDs.size())
+            && (m_data->gemaNrSrcIDs == m_data->gemaSources.size())
+            && (m_data->gemaNrEnvIDs == m_data->gemaEnvIDs.size())
+            && (m_data->gemaNrEnvIDs == m_data->gemaDiffraction.size())
+            && ((m_data->gemaNrEnvIDs + 1) * (m_data->gemaNrEnvIDs + 1) == m_data->gemaEnvironmentMatrix.size())
+            && (m_data->gemaNrInnerNodes == m_data->gemaBSPinnerNodes.size())
+            && (m_data->gemaNrOuterNodes == m_data->gemaBSPouterNodes.size())
+            && (m_data->gemaNrDiffBox == m_data->gemaDiffBox.size())
+            ;
+
+    if (!plausible) { return plausible; }
+
+    /* all environment IDs must be present inside the .eal */
+    for (const int32_t& id : m_data->gemaEnvIDs)
+    {
+        plausible = plausible
+                && (id >= 0)
+                && (static_cast<uint32_t>(id) < m_data->nrEnvironments)
+                ;
+    }
+
+    /* all source IDs must be present inside the .eal */
+    for (const int32_t& id : m_data->gemaSrcIDs)
+    {
+        plausible = plausible
+                && (id >= 0)
+                && (static_cast<uint32_t>(id) < m_data->nrSources)
+                ;
+    }
+
+    /* all source points must be valid floats */
+    for (const EMPoint& ep : m_data->gemaSources)
+    {
+        plausible = plausible
+                && std::isfinite(ep.fX)
+                && std::isfinite(ep.fY)
+                && std::isfinite(ep.fZ)
+                ;
+    }
+
+    /* diffraction vector not yet fully understood */
+
+    /* all indizes must point to valid obstacle IDs */
+    for (const int32_t& idx : m_data->gemaEnvironmentMatrix)
+    {
+        plausible = plausible
+                && (idx >= static_cast<int32_t>(EMFLAG_IDNONE))
+                && (idx < static_cast<int32_t>(m_data->nrObstacles))
+                ;
+    }
+
+    /* check all relevant members of the SplitNode */
+    for (const SplitNode& node : m_data->gemaBSPinnerNodes)
+    {
+        plausible = plausible
+                && std::isfinite(node.fX)
+                && std::isfinite(node.fY)
+                && std::isfinite(node.fZ)
+                && std::isfinite(node.fNormalX)
+                && std::isfinite(node.fNormalY)
+                && std::isfinite(node.fNormalZ)
+                && ((node.childFront & 0x80000000)
+                        ? (((node.childFront & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
+                        : (node.childFront <= m_data->gemaNrInnerNodes)
+                        )
+                && ((node.childBack & 0x80000000)
+                        ? (((node.childBack & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
+                        : (node.childBack <= m_data->gemaNrInnerNodes)
+                        )
+                ;
+    }
+
+    /* Zones must contain valid environment IDs */
+    for (const Zone& zone : m_data->gemaBSPouterNodes)
+    {
+        plausible = plausible
+                && (zone.indexEnvID >= static_cast<int32_t>(EMFLAG_IDNONE))
+                && (zone.indexEnvID < static_cast<int32_t>(m_data->gemaNrEnvIDs))
+                ;
+    }
+
     return plausible;
 }
 
@@ -711,12 +819,12 @@ int32_t EalMan::GetSourceAttributes(
         SourceAttributes&   srcAttributes
         ) const
 {
-    if (srcID == -1)
+    if (srcID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
         srcAttributes = m_data->defSource;
         return toInt(EalError::OK);
     }
-    return GetAttributes(srcID, srcAttributes, m_data->sources);
+    return GetAttributes(srcID, m_data->nrSources,  srcAttributes, m_data->sources);
 }
 
 int32_t EalMan::GetSourceNumInstances(
@@ -725,8 +833,7 @@ int32_t EalMan::GetSourceNumInstances(
         ) const
 {
     srcInstances = {};
-    int32_t length = static_cast<int32_t>(m_data->sources.size());
-    if (srcID < 0 || srcID >= length) { return toInt(EalError::InvalidId); }
+    if (srcID < 0 || static_cast<uint32_t>(srcID) >= m_data->nrSources) { return toInt(EalError::InvalidId); }
 
     srcInstances = std::count(m_data->gemaSrcIDs.begin(), m_data->gemaSrcIDs.end(), srcID);
 
@@ -773,12 +880,12 @@ int32_t EalMan::GetEnvironmentAttributes(
         EAXListenerProperties&   envAttributes
         ) const
 {
-    if (envID == -1)
+    if (envID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
         envAttributes = m_data->defEnvironment;
         return toInt(EalError::OK);
     }
-    return GetAttributes(envID, envAttributes, m_data->environments);
+    return GetAttributes(envID, m_data->nrEnvironments, envAttributes, m_data->environments);
 }
 
 int32_t EalMan::GetMaterialID(
@@ -794,12 +901,12 @@ int32_t EalMan::GetMaterialAttributes(
         MaterialAttributes&   matAttributes
         ) const
 {
-    if (matID == -1)
+    if (matID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
         matAttributes = m_data->defObstacle;
         return toInt(EalError::OK);
     }
-    return GetAttributes(matID, matAttributes, m_data->obstacles);
+    return GetAttributes(matID, m_data->nrObstacles, matAttributes, m_data->obstacles);
 }
 
 int32_t EalMan::GetGeometrySetID(
@@ -915,7 +1022,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
     if (obsID > static_cast<int32_t>(EMFLAG_IDNONE))
     {
-        if (obsID >= 0 && obsID < static_cast<int32_t>(m_data->obstacles.size()))
+        if (obsID >= 0 && obsID < static_cast<int32_t>(m_data->nrObstacles))
         {
             if (m_data->obstacles[obsID].dwFlags == EMMATERIAL_OBSTRUCTS)
             {

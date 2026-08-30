@@ -45,8 +45,9 @@ private:
             uint32_t&                                               bytesRead
             );
 
-    uint32_t ReadNumsChunk(
+    int32_t ReadNumsChunk(
             std::ifstream&   file,
+            uint32_t&        count,
             uint32_t&        bytesRead
             );
     int32_t ReadNamsChunk(
@@ -84,6 +85,7 @@ private:
     template <typename T>
     int32_t GetAttributes(
             const int32_t     id,
+            const int32_t     length,
             T&                attributes,
             std::vector<T>&   dataset
             ) const;
@@ -96,6 +98,7 @@ private:
     bool isLISPdataPlausible() const;
     bool isMATAdataPlausible() const;
     bool isSRCAdataPlausible() const;
+    bool isGEMAdataPlausible() const;
 
 public:
     EalMan();
