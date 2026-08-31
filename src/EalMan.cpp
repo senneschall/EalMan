@@ -348,7 +348,7 @@ int32_t EalMan::ReadGemaChunk(
     { return toInt(EalError::FileInvalid); }
      */
 
-    //if (isGEMAdataPlausible()) { toInt(EalError::FileInvalid); }
+    if (isGEMAdataPlausible()) { toInt(EalError::FileInvalid); }
     return toInt(EalError::OK);
 }
 
@@ -592,7 +592,7 @@ bool EalMan::isGEMAdataPlausible() const
     for (const int32_t& id : m_data->gemaEnvIDs)
     {
         plausible = plausible
-                && (id >= 0)
+                && (id >= static_cast<int32_t>(EMFLAG_IDDEFAULT))
                 && (static_cast<uint32_t>(id) < m_data->nrEnvironments)
                 ;
     }
@@ -601,7 +601,7 @@ bool EalMan::isGEMAdataPlausible() const
     for (const int32_t& id : m_data->gemaSrcIDs)
     {
         plausible = plausible
-                && (id >= 0)
+                && (id >= static_cast<int32_t>(EMFLAG_IDDEFAULT))
                 && (static_cast<uint32_t>(id) < m_data->nrSources)
                 ;
     }
