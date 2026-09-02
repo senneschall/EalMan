@@ -34,12 +34,8 @@ inline static float scalarProduct(
 
 inline static bool isInFront(
     EMPoint point,
-    float fX,
-    float fY,
-    float fZ,
-    float nX,
-    float nY,
-    float nZ
+    EMPoint base,
+    EMPoint normal
     )
 {
     /*
@@ -49,12 +45,12 @@ inline static bool isInFront(
      * this can be simplified to the single expression implemented here
      */
     return scalarProduct(
-        (point.fX - fX),
-        (point.fY - fY),
-        (point.fZ - fZ),
-        nX,
-        nY,
-        nZ
+        (point.fX - base.fX),
+        (point.fY - base.fY),
+        (point.fZ - base.fZ),
+        normal.fX,
+        normal.fY,
+        normal.fZ
     ) >= -1.0f;
 }
 
@@ -140,12 +136,12 @@ int32_t EalMan::EalGlobals(
         case FourCC::MINV:
             return readVer(file, 1, bytesRead);
         case FourCC::EXEP:
-            //return readString(file, m_data->defExep, bytesRead);
+            /* return readString(file, m_data->defExep, bytesRead); */
             file.ignore(260);
 		    bytesRead += 260;
             return toInt(EalError::OK);
         case FourCC::CMDS:
-            //return readString(file, m_data->defCmds, bytesRead);
+            /* return readString(file, m_data->defCmds, bytesRead); */
             file.ignore(260);
 		    bytesRead += 260;
             return toInt(EalError::OK);
@@ -158,7 +154,7 @@ int32_t EalMan::EalGlobals(
         case FourCC::DSRC:
             return readStruct(file, m_data->defSource, bytesRead) == toInt(EalError::OK) && isDEFSdataPlausible() ? toInt(EalError::OK) : toInt(EalError::FileInvalid);
         case FourCC::DFIL:
-            //return readString(file, m_data->defFile, bytesRead);
+            /* return readString(file, m_data->defFile, bytesRead); */
             file.ignore(260);
 		    bytesRead += 260;
             return toInt(EalError::OK);
@@ -307,7 +303,7 @@ int32_t EalMan::ReadGemaChunk(
         || readNumber(file, nrLeaves, bytesRead)  != toInt(EalError::OK))
     { return toInt(EalError::FileInvalid); }
 
-    uint32_t envMatrixSize = (nrEnvs + 1) * (nrEnvs + 1);
+    const uint32_t envMatrixSize = (nrEnvs + 1) * (nrEnvs + 1);
 
     if (nrSrcs > 0) // sources are optional
     {
@@ -317,8 +313,8 @@ int32_t EalMan::ReadGemaChunk(
     if (!(nrEnvs > 0   && ReadArrayData(file, nrEnvs, m_data->gemaEnvIDs, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Env IDs
     if (!(nrEnvs > 0 && ReadArrayData(file, nrEnvs, m_data->gemaDiffraction, bytesRead) == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Diffraction
     if (!(envMatrixSize > 1 && ReadArrayData(file, envMatrixSize, m_data->gemaEnvironmentMatrix, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Environment Matrix
-    if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Plane tree
-    if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Leaf tree
+    if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP inner tree
+    if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP outer tree
 
     m_data->gemaNrSrcIDs = nrSrcs;
     m_data->gemaNrEnvIDs = nrEnvs;
@@ -394,7 +390,7 @@ int32_t EalMan::EalEnvironmentAttributes(
         )
 {
     uint32_t nums{};
-    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK))
     { return res; }
     m_data->nrEnvironments = nums;
@@ -416,7 +412,7 @@ int32_t EalMan::EalObstacleAttributes(
         )
 {
     uint32_t nums{};
-    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK))
     { return res; }
     m_data->nrObstacles = nums;
@@ -436,7 +432,7 @@ int32_t EalMan::EalSourceAttributes(
         )
 {
     uint32_t nums{};
-    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK))
     { return res; }
     m_data->nrSources = nums;
@@ -461,7 +457,7 @@ int32_t EalMan::EalGeometryAttributes(
         )
 {
     uint32_t nums{};
-    int32_t res = ReadNumsChunk(file, nums, bytesRead);
+    const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK))
     { return res; }
     if (nums > 0)
@@ -631,19 +627,19 @@ bool EalMan::isGEMAdataPlausible() const
     for (const SplitNode& node : m_data->gemaBSPinnerNodes)
     {
         plausible = plausible
-                && std::isfinite(node.fX)
-                && std::isfinite(node.fY)
-                && std::isfinite(node.fZ)
-                && std::isfinite(node.fNormalX)
-                && std::isfinite(node.fNormalY)
-                && std::isfinite(node.fNormalZ)
+                && std::isfinite(node.base.fX)
+                && std::isfinite(node.base.fY)
+                && std::isfinite(node.base.fZ)
+                && std::isfinite(node.base.fX)
+                && std::isfinite(node.base.fY)
+                && std::isfinite(node.base.fZ)
                 && ((node.childFront & 0x80000000)
                         ? (((node.childFront & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
-                        : (node.childFront <= m_data->gemaNrInnerNodes)
+                        : (node.childFront < m_data->gemaNrInnerNodes)
                         )
                 && ((node.childBack & 0x80000000)
                         ? (((node.childBack & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
-                        : (node.childBack <= m_data->gemaNrInnerNodes)
+                        : (node.childBack < m_data->gemaNrInnerNodes)
                         )
                 ;
     }
@@ -782,7 +778,7 @@ int32_t EalMan::LoadDataSet(
         else { break; }
     }
 
-    //if (bytesRead != mainChunk.length) { return toInt(EalError::FileInvalid); } // test disabled because "DM-Morbias][.eal" has wrong chunk sizes in its data and would fail here
+    /* if (bytesRead != mainChunk.length) { return toInt(EalError::FileInvalid); } */ // test disabled because "DM-Morbias][.eal" has wrong chunk sizes in its data and would fail here
     if (!reqFourCC.all()) { return toInt(EalError::FileInvalid); } // at least one required Chunk could not be parsed
 
     return toInt(EalError::OK);
@@ -849,8 +845,8 @@ int32_t EalMan::GetSourceInstancePos(
     posInstance = {};
     int32_t srcInst{};
     if (GetSourceNumInstances(srcID, srcInst) != toInt(EalError::OK)) { return toInt(EalError::InvalidId); } // already checks if srcID is valid
-    if (srcInstance < 0 || srcInstance >= srcInst) { return toInt(EalError::InvalidId); }
-    //if (m_data->gemaSources.size < m_data->gemaNrSrcIDs) { return toInt(EalError::InvalidId); } // not needed as long as a failing LoadDataSet() is handled by the user
+    if (srcInstance < 0 || srcInstance >= srcInst) { return toInt(EalError::InstanceNotFound); }
+    /* if (m_data->gemaSources.size < m_data->gemaNrSrcIDs) { return toInt(EalError::InvalidId); } */
 
     int32_t cnt{};
     for (uint32_t i = 0; i < m_data->gemaNrSrcIDs; i++)
@@ -927,7 +923,10 @@ int32_t EalMan::GetListenerDynamicAttributes(
     envID = {};
     //int32_t length = (int32_t)m_data->geoNames.size();
     //if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); } // all UT .eal files only have a single geometry set, so the selection is skipped for now
-    if (geomID != 0) { return toInt(EalError::IdNotFound); }
+    if (geomID != 0
+            || m_data->gemaNrInnerNodes == 0
+            || m_data->gemaNrOuterNodes == 0)
+    { return toInt(EalError::IdNotFound); }
 
     if (lstPos.fX < -32768.0 || lstPos.fX > +32768.0
             || lstPos.fY < -32768.0 || lstPos.fY > +32768.0
@@ -938,20 +937,20 @@ int32_t EalMan::GetListenerDynamicAttributes(
     uint32_t child{0};
     while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
     {
-        if (child < m_data->gemaNrInnerNodes )
+        /* if (child < m_data->gemaNrInnerNodes ) */ // existance of some elements inside vector ensured at function start
         { node = m_data->gemaBSPinnerNodes[child]; }
-        else { return toInt(EalError::IdNotFound); }
+        /* else { return toInt(EalError::IdNotFound); } */
 
-        child = (isInFront(lstPos, node.fX, node.fY, node.fZ, node.fNormalX, node.fNormalY, node.fNormalZ))
+        child = (isInFront(lstPos, node.base, node.normal))
             ? node.childFront
             : node.childBack;
     }
     child &= 0x7FFFFFFF; // MSB unset to recover the índex of a Zone
-    if (child >= m_data->gemaNrOuterNodes)
-    { return toInt(EalError::IdNotFound); }
-    Zone zone = m_data->gemaBSPouterNodes[child];
+    /* if (child >= m_data->gemaNrOuterNods)
+    { return toInt(EalError::IdNotFound); } */
+    const Zone zone = m_data->gemaBSPouterNodes[child];
 
-    if (zone.indexEnvID >= 0 && zone.indexEnvID < static_cast<int32_t>(m_data->gemaNrEnvIDs))
+    if (zone.indexEnvID >= 0)
     { envID = m_data->gemaEnvIDs[zone.indexEnvID]; }
     else
     { envID = static_cast<int32_t>(EMFLAG_IDDEFAULT); }
@@ -959,12 +958,12 @@ int32_t EalMan::GetListenerDynamicAttributes(
     if (flags == EMFLAG_LOCKPOSITION)
     {
         m_listenerPosition = lstPos;
-        m_listenerEnvIDIndex = EMFLAG_IDDEFAULT;
+        m_listenerEnvIDIndex = static_cast<int32_t>(EMFLAG_IDDEFAULT);
         for (uint32_t i = 0; i < m_data->gemaNrEnvIDs; i++)
         {
             if (m_data->gemaEnvIDs[i] == envID)
             {
-                m_listenerEnvIDIndex = i;
+                m_listenerEnvIDIndex = static_cast<int32_t>(i);
                 break;
             }
         }
@@ -993,8 +992,11 @@ int32_t EalMan::GetSourceDynamicAttributes(
     srcOcclusionRM = {0.5f};
     virtPos = srcPos; // not implemented in EAX Manager either
 
-    int32_t length = static_cast<int32_t>(m_data->geoNames.size());
-    if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); }
+    /* int32_t length = static_cast<int32_t>(m_data->geoNames.size()); */ // UT .eal files only have 1 geometry, so skip this
+    /* if (geomID < 0 || geomID >= length ) { return toInt(EalError::IdNotFound); } */
+    if (geomID != 0
+            || m_data->gemaNrEnvIDs == 0)
+    { return toInt(EalError::IdNotFound); }
 
     if (srcPos.fX < -32768.0 || srcPos.fX > +32768.0
             || srcPos.fY < -32768.0 || srcPos.fY > +32768.0
@@ -1002,14 +1004,14 @@ int32_t EalMan::GetSourceDynamicAttributes(
     { return toInt(EalError::IdNotFound); }
 
     int32_t envID_srcPos{};
-    uint32_t src_EnvIDIndex{EMFLAG_IDDEFAULT};
+    int32_t src_EnvIDIndex = static_cast<int32_t>(EMFLAG_IDDEFAULT);
     if (GetListenerDynamicAttributes(geomID, srcPos, envID_srcPos, 0) == toInt(EalError::OK))
     {
         for (uint32_t i = 0; i < m_data->gemaNrEnvIDs; i++)
         {
             if (m_data->gemaEnvIDs[i] == envID_srcPos)
             {
-                src_EnvIDIndex = i;
+                src_EnvIDIndex = static_cast<int32_t>(i);
                 break;
             }
         }
@@ -1017,12 +1019,12 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
     const int32_t obsID = m_data->gemaEnvironmentMatrix[
         (m_data->gemaNrEnvIDs + 1) * (m_listenerEnvIDIndex + 1) //row (nrEnv + 1) * (lstPosID + 1) -- lstPosID starts with EMFLAG_IDDEFAULT=-1
-            + src_EnvIDIndex // column
+        + (src_EnvIDIndex + 1) // column
     ];
 
     if (obsID > static_cast<int32_t>(EMFLAG_IDNONE))
     {
-        if (obsID >= 0 && obsID < static_cast<int32_t>(m_data->nrObstacles))
+        if (obsID >= 0)
         {
             if (m_data->obstacles[obsID].dwFlags == EMMATERIAL_OBSTRUCTS)
             {
@@ -1057,8 +1059,88 @@ int32_t EalMan::GetSourceDynamicAttributes(
         return toInt(EalError::OK);
     }
 
-    if (m_listenerEnvIDIndex == static_cast<uint32_t>(src_EnvIDIndex)) // source and listener in the same environment
+    if (m_listenerEnvIDIndex == src_EnvIDIndex) // source and listener in the same environment
     {
+        if (m_data->gemaNrDiffBox > 0)
+        {
+            uint32_t i{0};
+            for (; i < m_data->gemaNrDiffBox; i++)
+            {
+                if (m_data->gemaDiffBox[i].lSubspaceID == m_listenerEnvIDIndex) { break; }
+                if (m_data->gemaDiffBox[i].lSubspaceID > m_listenerEnvIDIndex) { return toInt(EalError::OK); }
+            }
+            if (i == m_data->gemaNrDiffBox) { return toInt(EalError::OK); }
+
+            for (; i < m_data->gemaNrDiffBox; i++)
+            {
+                if (m_data->gemaDiffBox[i].lSubspaceID == m_listenerEnvIDIndex) { break; }
+
+                std::bitset<6> relLstPos;
+
+                if (m_data->gemaDiffBox[i].empMin.fX <= m_listenerPosition.fX)
+                {
+                    if (m_data->gemaDiffBox[i].empMax.fX < m_listenerPosition.fX)
+                    { relLstPos.set(4); }
+                }
+                else
+                { relLstPos.set(5); }
+
+                if (m_data->gemaDiffBox[i].empMin.fY <= m_listenerPosition.fY)
+                {
+                    if (m_data->gemaDiffBox[i].empMax.fY <= m_listenerPosition.fY)
+                    { relLstPos.set(2); }
+                }
+                else
+                { relLstPos.set(3); }
+
+                if (m_data->gemaDiffBox[i].empMin.fZ <= m_listenerPosition.fZ)
+                {
+                    if (m_data->gemaDiffBox[i].empMax.fZ <= m_listenerPosition.fZ)
+                    {
+                        relLstPos.set(0);
+                    }
+                }
+                else
+                {
+                    relLstPos.set(1);
+                }
+
+                std::bitset<6> relSrcPos;
+
+                if (m_data->gemaDiffBox[i].empMin.fX <= srcPos.fX)
+                {
+                    if (m_data->gemaDiffBox[i].empMax.fX <= srcPos.fX)
+                    { relSrcPos.set(4); }
+                }
+                else
+                { relSrcPos.set(5); }
+
+                if (m_data->gemaDiffBox[i].empMin.fY <= srcPos.fY)
+                {
+                    if (m_data->gemaDiffBox[i].empMax.fY <= srcPos.fY)
+                    { relSrcPos.set(2); }
+                }
+                else
+                { relSrcPos.set(3); }
+
+                if (m_data->gemaDiffBox[i].empMin.fZ <= srcPos.fZ)
+                {
+                    if (m_data->gemaDiffBox[i].empMax.fZ < srcPos.fZ)
+                    { relSrcPos.set(0); }
+                }
+                else
+                { relSrcPos.set(1); }
+
+                if (relLstPos == relSrcPos)
+                {
+                    switch (relLstPos.to_ulong())
+                    {
+                    //case 0b00000001:
+                    }
+                }
+            }
+        }
+
 
     }
 

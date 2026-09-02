@@ -14,7 +14,7 @@ private:
     /* buffered listener position */
     EMPoint                  m_listenerPosition{};
     /* buffered environment the listener position is in */
-    uint32_t                 m_listenerEnvIDIndex{};
+    int32_t                  m_listenerEnvIDIndex{};
 
     int32_t EalGlobals(
             std::ifstream&   file,
@@ -190,7 +190,7 @@ public:
      * @param srcID [in] ID to use for source
      * @param srcInstance [in] Instance to use for source, zero-based
      * @param posInstance [out] 3D position of instance (srcID) of source (srcInstance)
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_INVALIDID, EM_INSTANCENOTFOUND
      */
     int32_t GetSourceInstancePos(
             const int32_t   srcID,

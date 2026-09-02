@@ -189,12 +189,8 @@ struct EAXDiffractionModel
 
 struct SplitNode
 {
-    float    fX{};
-    float    fY{};
-    float    fZ{};
-    float    fNormalX{};
-    float    fNormalY{};
-    float    fNormalZ{};
+    EMPoint  base{};
+    EMPoint  normal{};
     uint32_t childFront{};
     uint32_t childBack{};
     uint32_t notUsedA{};
