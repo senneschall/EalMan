@@ -302,7 +302,7 @@ static int32_t readVer(
 }
 
 template <typename T>
-static int32_t EalMan::ReadArrayData(
+int32_t EalMan::ReadArrayData(
         std::ifstream&    file,
         uint32_t          count,
         std::vector<T>&   dest,
@@ -1186,7 +1186,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
         float&           srcOcclusionLF,
         float&           srcOcclusionRM,
         EMPoint&         virtPos,
-        const uint32_t   flags
+        [[maybe_unused]] const uint32_t   flags
         )
 {
     // defaults
@@ -1258,7 +1258,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
             }
         }
     }
-
+/*
     if ((flags & EMFLAG_NODIFFRACTION) != 0)
     {
         return toInt(EalError::OK);
@@ -1276,7 +1276,6 @@ int32_t EalMan::GetSourceDynamicAttributes(
             }
             if (i == m_data->gemaNrDiffBox) { return toInt(EalError::OK); }
 
-            /*
             for (; i < m_data->gemaNrDiffBox; i++)
             {
                 if (m_data->gemaDiffBox[i].lSubspaceID == m_listenerEnvIDIndex) { break; }
@@ -1570,8 +1569,8 @@ int32_t EalMan::GetSourceDynamicAttributes(
                 srcObstruction = std::min(srcObstruction, m_data->gdfm.MaxAttenuation);
                 srcObstructionLF = std::min(srcObstructionLF, m_data->gdfm.LFRatio);
             }
-            */
         }
     }
+*/
     return toInt(EalError::OK);
 }
