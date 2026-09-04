@@ -1,15 +1,30 @@
 cmake_minimum_required(VERSION 3.10)
-project(EalMan)
-set(CMAKE_CXX_STANDARD          17)
+project(EalManTest)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-add_library(${PROJECT_NAME} STATIC
-"${CMAKE_CURRENT_SOURCE_DIR}/src/EalMan.cpp"
-"${CMAKE_CURRENT_SOURCE_DIR}/src/Chunk.cpp"
+add_library(ealman STATIC 
+"src/Chunk.cpp"
+"src/EalMan.cpp"
 )
-target_include_directories(${PROJECT_NAME} PUBLIC 
-"${CMAKE_CURRENT_SOURCE_DIR}/src"
-"${CMAKE_CURRENT_SOURCE_DIR}"
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-add_subdirectory(tests)
+find_package(GTest REQUIRED)
+include_directories(${GTEST_INCLUDE_DIRS})
 enable_testing()
+add_executable(run_tests
+"tests/test.cpp"
+)
+target_include_directories(run_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(run_tests ealman GTest::GTest GTest::gtest_main)
+include(GoogleTest)
+gtest_discover_tests(run_tests)
+set(TEST_DATA_SRC_DIR_GOOD "${CMAKE_CURRENT_SOURCE_DIR}/tests/Eal")
+set(TEST_DATA_SRC_DIR_FAIL "${CMAKE_CURRENT_SOURCE_DIR}/tests/EalFail")
+set(TEST_DATA_BIN_DIR "$<TARGET_FILE_DIR:run_tests>")
+add_custom_command(
+    TARGET run_tests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${TEST_DATA_SRC_DIR_GOOD}"
+            "${TEST_DATA_BIN_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${TEST_DATA_SRC_DIR_FAIL}"
+            "${TEST_DATA_BIN_DIR}"
+)

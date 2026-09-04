@@ -1,7 +1,10 @@
 #include <gtest/gtest.h>
-#include "src/EalMan.h"
+#include "EalMan.h"
 #include "EalFileContents.h"
+#include "EalFileLstPos.h"
+#include "EalFileSrcPos.h"
 
+#pragma region LoadDataSet
 namespace LoadDataSet
 {
     namespace OriginalEALFiles
@@ -108,7 +111,9 @@ namespace LoadDataSet
         }
     }
 }
+#pragma endregion
 
+#pragma region GetDataSetSize
 namespace GetDataSetSize
 {
     namespace OriginalEALFiles
@@ -134,7 +139,9 @@ namespace GetDataSetSize
         }
     }
 }
+#pragma endregion
 
+#pragma region FreeDataSet
 namespace FreeDataSet
 {
     namespace OriginalEALFiles
@@ -157,7 +164,9 @@ namespace FreeDataSet
         }
     }
 }
+#pragma endregion
 
+#pragma region GetListenerAttributes
 namespace GetListenerAttributes
 {
     namespace OriginalEALFiles
@@ -201,7 +210,9 @@ namespace GetListenerAttributes
         }
     }
 }
+#pragma endregion
 
+#pragma region GetSourceID
 namespace GetSourceID
 {
     namespace OriginalEALFiles
@@ -268,7 +279,9 @@ namespace GetSourceID
         }
     }
 }
+#pragma endregion
 
+#pragma region GetSourceAttributes
 namespace GetSourceAttributes
 {
     namespace OriginalEALFiles
@@ -325,7 +338,7 @@ namespace GetSourceAttributes
             int32_t resLoad = man.LoadDataSet("DM-StalwartXL.eal", 0);
             ASSERT_EQ(resLoad, toInt(EalError::OK));
             SourceAttributes sa{};
-            int32_t resGLA = man.GetSourceAttributes(-1, sa);
+            int32_t resGLA = man.GetSourceAttributes(-2, sa);
             EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
             EXPECT_EQ(sa.eaxAttributes.lDirect, {});
             EXPECT_EQ(sa.eaxAttributes.lDirectHF, {});
@@ -448,7 +461,9 @@ namespace GetSourceAttributes
         }
     }
 }
+#pragma endregion
 
+#pragma region GetSourceNumInstances
 namespace GetSourceNumInstances
 {
     namespace OriginalEALFiles
@@ -516,7 +531,9 @@ namespace GetSourceNumInstances
         }
     }
 }
+#pragma endregion
 
+#pragma region GetSourceInstancePos
 namespace GetSourceInstancePos
 {
     namespace OriginalEALFiles
@@ -588,7 +605,7 @@ namespace GetSourceInstancePos
             ASSERT_EQ(resLoad, toInt(EalError::OK));
             EMPoint pos{};
             int32_t resGSNI = man.GetSourceInstancePos(0, -1, pos);
-            EXPECT_EQ(resGSNI, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGSNI, toInt(EalError::InstanceNotFound));
             EXPECT_FLOAT_EQ(pos.fX, {});
             EXPECT_FLOAT_EQ(pos.fY, {});
             EXPECT_FLOAT_EQ(pos.fZ, {});
@@ -601,7 +618,7 @@ namespace GetSourceInstancePos
             ASSERT_EQ(resLoad, toInt(EalError::OK));
             EMPoint pos{};
             int32_t resGSNI = man.GetSourceInstancePos(0, 123, pos);
-            EXPECT_EQ(resGSNI, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGSNI, toInt(EalError::InstanceNotFound));
             EXPECT_FLOAT_EQ(pos.fX, {});
             EXPECT_FLOAT_EQ(pos.fY, {});
             EXPECT_FLOAT_EQ(pos.fZ, {});
@@ -621,7 +638,9 @@ namespace GetSourceInstancePos
         }
     }
 }
+#pragma endregion
 
+#pragma region GetEnvironmentID
 namespace GetEnvironmentID
 {
     namespace OriginalEALFiles
@@ -688,7 +707,9 @@ namespace GetEnvironmentID
         }
     }
 }
+#pragma endregion
 
+#pragma region GetEnvironmentAttributes
 namespace GetEnvironmentAttributes
 {
     namespace OriginalEALFiles
@@ -744,7 +765,7 @@ namespace GetEnvironmentAttributes
             int32_t resLoad = man.LoadDataSet("DM-Pressure.eal", 0);
             ASSERT_EQ(resLoad, toInt(EalError::OK));
             EAXListenerProperties ea{};
-            int32_t resGLA = man.GetEnvironmentAttributes(-1, ea);
+            int32_t resGLA = man.GetEnvironmentAttributes(-2, ea);
             EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
             EXPECT_EQ(ea.lRoom, {});
             EXPECT_EQ(ea.lRoomHF, {});
@@ -831,7 +852,9 @@ namespace GetEnvironmentAttributes
         }
     }
 }
+#pragma endregion
 
+#pragma region GetMaterialID
 namespace GetMaterialID
 {
     namespace OriginalEALFiles
@@ -898,7 +921,9 @@ namespace GetMaterialID
         }
     }
 }
+#pragma endregion
 
+#pragma region GetMaterialAttributes
 namespace GetMaterialAttributes
 {
     namespace OriginalEALFiles
@@ -936,7 +961,7 @@ namespace GetMaterialAttributes
             int32_t resLoad = man.LoadDataSet("DM-Tempest.eal", 0);
             ASSERT_EQ(resLoad, toInt(EalError::OK));
             MaterialAttributes ma{};
-            int32_t resGMA = man.GetMaterialAttributes(-1, ma);
+            int32_t resGMA = man.GetMaterialAttributes(-2, ma);
             EXPECT_EQ(resGMA, toInt(EalError::InvalidId));
             EXPECT_EQ(ma.lLevel, {});
             EXPECT_FLOAT_EQ(ma.fLFRatio, {});
@@ -983,7 +1008,9 @@ namespace GetMaterialAttributes
         }
     }
 }
+#pragma endregion
 
+#pragma region GetGeometrySetID
 namespace GetGeometrySetID
 {
     namespace OriginalEALFiles
@@ -1060,29 +1087,33 @@ namespace GetGeometrySetID
         }
     }
 }
+#pragma endregion
 
+#pragma region GetListenerDynamicAttributes
 namespace GetListenerDynamicAttributes
 {
     namespace OriginalEALFiles
     {
-        /*
-        TEST(LibUse, GetListenerDynamicAttributes_CTFFace)
+        TEST_P(ListEnvIDs, GetListenerDynamicAttributes_ValidFile)
         {
-            EalMan man;
-            int32_t resLoad = man.LoadDataSet("CTF-Face.eal", 0);
+            ListenerPosEnvID par = GetParam();
+            int32_t resLoad = man.LoadDataSet(par.filename, 0);
             ASSERT_EQ(resLoad, toInt(EalError::OK));
-            uint32_t datasize = 0;
-            int32_t resSize = man.GetDataSetSize(datasize, 0);
-            ASSERT_EQ(resSize, toInt(EalError::OK));
-            ASSERT_GT(datasize, sizeof(EalData));
-            int32_t resFree = man.FreeDataSet(0);
-            EXPECT_EQ(resFree, toInt(EalError::OK));
-            uint32_t freesize = 0;
-            int32_t resEmpty = man.GetDataSetSize(freesize, 0);
-            EXPECT_EQ(resEmpty, toInt(EalError::OK));
-            EXPECT_EQ(freesize, sizeof(EalData));
+            for (int x = 0; x < par.anzahl; x++)
+            {
+                for (int y = 0; y < par.anzahl; y++)
+                {
+                    for (int z = 0; z < par.anzahl; z++)
+                    {
+                        int32_t envID{};
+                        EMPoint pos{ par.PosX[x], par.PosY[y], par.PosZ[z] };
+                        int32_t resGDA = man.GetListenerDynamicAttributes(0, pos, envID, 0);
+                        EXPECT_EQ(resGDA, toInt(EalError::OK));
+                        EXPECT_EQ(envID, par.EnvID[x * par.anzahl * par.anzahl + y * par.anzahl + z]);
+                    }
+                }
+            }
         }
-        */
     }
 
     namespace FailingGetListenerDynamicAttributesRequests
@@ -1204,29 +1235,41 @@ namespace GetListenerDynamicAttributes
         }
     }
 }
+#pragma endregion
 
+#pragma region GetSourceDynamicAttributes
 namespace GetSourceDynamicAttributes
 {
     namespace OriginalEALFiles
     {
-        /*
-        TEST(LibUse, GetSourceDynamicAttributes_CTFFace)
+        TEST_P(ListSrcIDs, GetSourceDynamicAttributes_ValidFile)
         {
-            EalMan man;
-            int32_t resLoad = man.LoadDataSet("CTF-Face.eal", 0);
+            SourcePosEnvID par = GetParam();
+            int32_t resLoad = man.LoadDataSet(par.filename, 0);
             ASSERT_EQ(resLoad, toInt(EalError::OK));
-            uint32_t datasize = 0;
-            int32_t resSize = man.GetDataSetSize(datasize, 0);
-            ASSERT_EQ(resSize, toInt(EalError::OK));
-            ASSERT_GT(datasize, sizeof(EalData));
-            int32_t resFree = man.FreeDataSet(0);
-            EXPECT_EQ(resFree, toInt(EalError::OK));
-            uint32_t freesize = 0;
-            int32_t resEmpty = man.GetDataSetSize(freesize, 0);
-            EXPECT_EQ(resEmpty, toInt(EalError::OK));
-            EXPECT_EQ(freesize, sizeof(EalData));
+            for (DataSet data : par.data)
+            {
+                int32_t envID{};
+                int32_t resGDA = man.GetListenerDynamicAttributes(0, data.lstPos, envID, EMFLAG_LOCKPOSITION);
+                ASSERT_EQ(resGDA, toInt(EalError::OK));
+                int32_t srcObs{};
+                float srcObsLF{};
+                int32_t srcOccl{};
+                float srcOcclLF{};
+                float srcOcclRM{};
+                EMPoint vpkt{};
+                int32_t resSDA = man.GetSourceDynamicAttributes(0, data.srcPos, srcObs, srcObsLF, srcOccl, srcOcclLF, srcOcclRM, vpkt, 0);
+                EXPECT_EQ(resSDA, toInt(EalError::OK));
+                EXPECT_EQ(srcObs, data.srcObstruction);
+                EXPECT_FLOAT_EQ(srcObsLF, data.srcObstructionLF);
+                EXPECT_EQ(srcOccl, data.srcOcclusion);
+                EXPECT_FLOAT_EQ(srcOcclLF, data.srcOcclusionLF);
+                EXPECT_FLOAT_EQ(srcOcclRM, data.srcOcclusionRM);
+                EXPECT_FLOAT_EQ(vpkt.fX, data.virtPos.fX);
+                EXPECT_FLOAT_EQ(vpkt.fY, data.virtPos.fY);
+                EXPECT_FLOAT_EQ(vpkt.fZ, data.virtPos.fZ);
+            }
         }
-        */
     }
 
     namespace FailingGetSourceDynamicAttributesRequests
@@ -1245,11 +1288,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(-1, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_GeomIDtooHigh)
@@ -1266,11 +1309,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(12321, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_PosOutOfBoundXLow)
@@ -1287,11 +1330,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_PosOutOfBoundXHigh)
@@ -1308,11 +1351,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_PosOutOfBoundYLow)
@@ -1329,11 +1372,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_PosOutOfBoundYHigh)
@@ -1350,11 +1393,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_PosOutOfBoundZlow)
@@ -1371,11 +1414,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_PosOutOfBoundZHigh)
@@ -1392,11 +1435,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_NoDataSetLoaded)
@@ -1412,11 +1455,11 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
 
         TEST(FailingEalFiles, GetSourceDynamicAttributes_UninitializedVars)
@@ -1431,11 +1474,12 @@ namespace GetSourceDynamicAttributes
             EMPoint vPos;
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
             EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
-            EXPECT_EQ(obs, {});
-            EXPECT_FLOAT_EQ(olf, {});
-            EXPECT_EQ(occ, {});
-            EXPECT_FLOAT_EQ(clf, {});
-            EXPECT_FLOAT_EQ(orm, {});
+            EXPECT_EQ(obs, { 0 });
+            EXPECT_FLOAT_EQ(olf, { 0.0f });
+            EXPECT_EQ(occ, { 0 });
+            EXPECT_FLOAT_EQ(clf, { 0.25f });
+            EXPECT_FLOAT_EQ(orm, { 0.5f });
         }
     }
 }
+#pragma endregion
