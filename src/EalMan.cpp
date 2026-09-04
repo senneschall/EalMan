@@ -27,15 +27,15 @@ inline static float scalarProduct(
     float bX,
     float bY,
     float bZ
-)
+    )
 {
     return (aX * bX + aY * bY + aZ * bZ);
 }
 
 inline static bool isInFront(
-    EMPoint point,
-    EMPoint base,
-    EMPoint normal
+    const EMPoint point,
+    const EMPoint base,
+    const EMPoint normal
     )
 {
     /*
@@ -53,7 +53,212 @@ inline static bool isInFront(
         normal.fZ
     ) >= -1.0f;
 }
+/*
+static bool getIntersectionPoint(
+    const EMPoint coordPointA,
+    const EMPoint coordPointB,
+    const EMPoint coordPlaneBase,
+    const EMPoint vecPlaneNormal,
+    EMPoint& intersection
+    )
+{
+    intersection = {};
+    float denominator =
+              (coordPointB.fX - coordPointA.fX) * vecPlaneNormal.fX
+            + (coordPointB.fY - coordPointA.fY) * vecPlaneNormal.fY
+            + (coordPointB.fZ - coordPointA.fZ) * vecPlaneNormal.fZ;
 
+    if (std::fpclassify(denominator) == FP_ZERO) { return false; }
+
+    float partB = (
+            (
+                  (coordPlaneBase.fX - coordPointA.fX) * vecPlaneNormal.fX
+                + (coordPlaneBase.fY - coordPointA.fY) * vecPlaneNormal.fY
+                + (coordPlaneBase.fZ - coordPointA.fZ) * vecPlaneNormal.fZ
+            ) / ( denominator )
+        );
+    float partA = 1.0f - partB;
+
+    intersection.fX = partA * coordPointA.fX + partB * coordPointB.fX;
+    intersection.fY = partA * coordPointA.fY + partB * coordPointB.fY;
+    intersection.fZ = partA * coordPointA.fZ + partB * coordPointB.fZ;
+    return true;
+}
+
+static bool isIntersectInsideDiffbox(
+    const EMPoint& intersect,
+    const uint32_t boxSide,
+    const EMPoint& dbMin,
+    const EMPoint& dbMax
+)
+{
+    switch (boxSide)
+    {
+    case 0:
+    case 1:
+        // outside Z, therefore testing X/Y
+        if (
+            intersect.fX >= dbMin.fX
+            && intersect.fX <= dbMax.fX
+            && intersect.fY >= dbMin.fY
+            && intersect.fY <= dbMax.fY
+            )
+        { return true; }
+        else
+        { return false; }
+
+    case 2:
+    case 3:
+        // outside Y, therefore testing X/Z
+        if (
+            intersect.fX >= dbMin.fX
+            && intersect.fX <= dbMax.fX
+            && intersect.fZ >= dbMin.fZ
+            && intersect.fZ <= dbMax.fZ
+            )
+        { return true; }
+        else
+        { return false; }
+
+    case 4:
+    case 5:
+        // outside X, therefore testing Y/Z
+        if (
+            intersect.fY >= dbMax.fY
+            && intersect.fY <= dbMax.fY
+            && intersect.fZ >= dbMax.fZ
+            && intersect.fZ <= dbMax.fZ
+            )
+        { return true; }
+        else 
+        { return false; }
+
+    default:
+        return true;
+    }
+}
+
+static void normalize(
+    EMPoint& v
+)
+{
+    float len = sqrtf(scalarProduct(v.fX, v.fY, v.fZ, v.fX, v.fY, v.fZ));
+
+    if (std::fpclassify(len) != FP_ZERO)
+    {
+        v.fX /= len;
+        v.fY /= len;
+        v.fZ /= len;
+    }
+}
+
+static uint32_t computeDiffraction(
+    const EMPoint& listener,
+    const EMPoint& source,
+    const EMPoint& intersection,
+    const uint32_t boxSide,
+    const EMPoint& boxMin,
+    const EMPoint& boxMax,
+    const float    angleMaxAttenuation
+)
+{
+    EMPoint edgePoint = intersection;
+
+    // 1. Projektion des Schnittpunkts auf die relevante Box-Kante
+    switch (boxSide)
+    {
+    case 0:
+    case 1:
+        // projection onto X/Y
+        if (listener.fY <= boxMin.fY || listener.fY >= boxMax.fY)
+        {
+            edgePoint.fY =
+                (intersection.fY >= (boxMin.fY + boxMax.fY) * 0.5f)
+                ? boxMin.fY
+                : boxMax.fY;
+        }
+        else
+        {
+            edgePoint.fX =
+                (intersection.fX >= (boxMin.fX + boxMax.fX) * 0.5f)
+                ? boxMin.fX
+                : boxMax.fX;
+        }
+        break;
+
+    case 2:
+    case 3:
+        // projection onto X/Z
+        if (listener.fZ < boxMin.fZ && listener.fZ > boxMax.fZ)
+        {
+            edgePoint.fX =
+                (intersection.fX >= (boxMin.fX + boxMax.fX) * 0.5f)
+                ? boxMin.fX
+                : boxMax.fX;
+        }
+        else
+        {
+            edgePoint.fZ =
+                (intersection.fZ >= (boxMin.fZ + boxMax.fZ) * 0.5f)
+                ? boxMax.fZ
+                : boxMin.fZ;
+        }
+        break;
+
+    case 4:
+    case 5:
+        // projection onto Y/Z
+        if (listener.fY <= boxMin.fY || listener.fY >= boxMax.fY)
+        {
+            edgePoint.fY =
+                (intersection.fY >= (boxMin.fY + boxMax.fY) * 0.5f)
+                ? boxMin.fY
+                : boxMax.fY;
+        }
+        else
+        {
+            edgePoint.fZ =
+                (intersection.fZ >= (boxMin.fZ + boxMax.fZ) * 0.5f)
+                ? boxMax.fZ
+                : boxMin.fZ;
+        }
+        break;
+
+    default:
+        return 0;
+    }
+
+    EMPoint lst = {
+        listener.fX - edgePoint.fX,
+        listener.fY - edgePoint.fY,
+        listener.fZ - edgePoint.fZ
+    };
+    normalize(lst);
+
+    EMPoint src = {
+        source.fX - edgePoint.fX,
+        source.fY - edgePoint.fY,
+        source.fZ - edgePoint.fZ
+    };
+    normalize(src);
+
+    // angle between lst-edge and src-edge
+    float dot = scalarProduct(lst.fX, lst.fY, lst.fZ, src.fX, src.fY, src.fZ);
+
+    // dot < 0 > angle > 90° -> attenuation possible
+    if (dot < 0.0f)
+    {
+        float angle = dot + 1.0f; // 1 - cos(theta)
+
+        if (angle < angleMaxAttenuation * 0.011111111f)
+        {
+            return static_cast<uint32_t>(angle);
+        }
+    }
+
+    return 0;
+}
+*/
 template<typename T>
 int32_t readStruct(
         std::ifstream&   file,
@@ -97,7 +302,7 @@ static int32_t readVer(
 }
 
 template <typename T>
-static int32_t ReadArrayData(
+static int32_t EalMan::ReadArrayData(
         std::ifstream&    file,
         uint32_t          count,
         std::vector<T>&   dest,
@@ -1071,6 +1276,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
             }
             if (i == m_data->gemaNrDiffBox) { return toInt(EalError::OK); }
 
+            /*
             for (; i < m_data->gemaNrDiffBox; i++)
             {
                 if (m_data->gemaDiffBox[i].lSubspaceID == m_listenerEnvIDIndex) { break; }
@@ -1130,19 +1336,242 @@ int32_t EalMan::GetSourceDynamicAttributes(
                 }
                 else
                 { relSrcPos.set(1); }
+                */
 
+                /*
+                 * Bitset:
+                 * 0b00x00000 -> (lst/src) Pos.X < diffBox->empMin.X
+                 * 0b000x0000 -> (lst/src) Pos.X > diffBox->empMax.X
+                 * 0b0000x000 -> (lst/src) Pos.Y < diffBox->empMin.Y
+                 * 0b00000x00 -> (lst/src) Pos.Y > diffBox->empMax.Y
+                 * 0b000000x0 -> (lst/src) Pos.Z < diffBox->empMin.Z
+                 * 0b0000000x -> (lst/src) Pos.Z > diffBox->empMax.Z
+                 */
+
+                /*
+                uint32_t cntExceedBound{0};
+                uint32_t crossType{0};
+                EMPoint basePointA{0};
+                EMPoint basePointB{0};
+                EMPoint vecNormalA{0};
+                EMPoint vecNormalB{0};
                 if (relLstPos == relSrcPos)
                 {
                     switch (relLstPos.to_ulong())
                     {
-                    //case 0b00000001:
+                    case 0b00000001: // X inside (Min/Max) | Y inside (Min/Max) | Z > Max.Z
+                        cntExceedBound = 1;
+                        crossType = 1;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 0.0f, 0.0f, 1.0f };
+                        break;
+                    case 0b00000010: // X inside (Min/Max) | Y inside (Min/Max) | Z < Min.Z
+                        cntExceedBound = 1;
+                        crossType = 0;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { 0.0f, 0.0f, -1.0f };
+                        break;
+                    case 0b00000100: // X inside (Min/Max) | Y > Max.Y          | Z inside (Min/Max)
+                        cntExceedBound = 1;
+                        crossType = 2;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00000101: // X inside (Min/Max) | Y > Max.Y          | Z > Max.Z
+                        cntExceedBound = 2;
+                        crossType = 2;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 0.0f, 1.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 0.0f, 1.0f };
+                        break;
+                    case 0b00000110: // X inside (Min/Max) | Y > Max.Y          | Z < Min.Z
+                        cntExceedBound = 2;
+                        crossType = 2;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 0.0f, 1.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, 0.0f, -1.0f };
+                        break;
+                    case 0b00001000: // X inside (Min/Max) | Y < Min.Y          | Z inside (Min/Max)
+                        cntExceedBound = 1;
+                        crossType = 3;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    case 0b00001001: // X inside (Min/Max) | Y < Min.Y          | Z > Max.Z
+                        cntExceedBound = 2;
+                        crossType = 3;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { 0.0f, -1.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 0.0f, 1.0f };
+                        break;
+                    case 0b00001010: // X inside (Min/Max) | Y < Min.Y          | Z < Min.Z
+                        cntExceedBound = 2;
+                        crossType = 3;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { 0.0f, -1.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, 0.0f, -1.0f };
+                        break;
+                    case 0b00010000: // X > Max.X          | Y inside (Min/Max) | Z inside (Min/Max)
+                        cntExceedBound = 1;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        break;
+                    case 0b00010001: // X > Max.X          | Y inside (Min/Max) | Z > Max.Z
+                        cntExceedBound = 2;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 0.0f, 1.0f };
+                        break;
+                    case 0b00010010: // X > Max.X          | Y inside (Min/Max) | Z < Min.Z
+                        cntExceedBound = 2;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, 0.0f, -1.0f };
+                        break;
+                    case 0b00010100: // X > Max.X          | Y > Max.Y          | Z inside (Min/Max)
+                        cntExceedBound = 2;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00010101: // X > Max.X          | Y > Max.Y          | Z > Max.Z
+                        cntExceedBound = 3;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00010110: // X > Max.X          | Y > Max.Y          | Z < Min.Z
+                        cntExceedBound = 3;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00011000: // X > Max.X          | Y < Min.Y          | Z inside (Min/Max)
+                        cntExceedBound = 2;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    case 0b00011001: // X > Max.X          | Y < Min.Y          | Z > Max.Z
+                        cntExceedBound = 3;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    case 0b00011010: // X > Max.X          | Y < Min.Y          | Z < Min.Z
+                        cntExceedBound = 3;
+                        crossType = 5;
+                        basePointA = m_data->gemaDiffBox[i].empMax;
+                        vecNormalA = { 1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    case 0b00100000: // X < Min.X          | Y inside (Min/Max) | Z inside (Min/Max)
+                        cntExceedBound = 1;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        break;
+                    case 0b00100001: // X < Min.X          | Y inside (Min/Max) | Z > Max.Z
+                        cntExceedBound = 2;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 0.0f, 1.0f };
+                        break;
+                    case 0b00100010: // X < Min.X          | Y inside (Min/Max) | Z < Min.Z
+                        cntExceedBound = 2;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, 0.0f, -1.0f };
+                        break;
+                    case 0b00100100: // X < Min.X          | Y > Max.Y          | Z inside (Min/Max)
+                        cntExceedBound = 2;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00100101: // X < Min.X          | Y > Max.Y          | Z > Max.Z
+                        cntExceedBound = 3;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00100110: // X < Min.X          | Y > Max.Y          | Z < Min.Z
+                        cntExceedBound = 3;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMax;
+                        vecNormalB = { 0.0f, 1.0f, 0.0f };
+                        break;
+                    case 0b00101000: // X < Min.X          | Y < Min.Y          | Z inside (Min/Max)
+                        cntExceedBound = 2;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    case 0b00101001: // X < Min.X          | Y < Min.Y          | Z > Max.Z
+                        cntExceedBound = 3;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    case 0b00101010: // X < Min.X          | Y < Min.Y          | Z < Min.Z
+                        cntExceedBound = 3;
+                        crossType = 4;
+                        basePointA = m_data->gemaDiffBox[i].empMin;
+                        vecNormalA = { -1.0f, 0.0f, 0.0f };
+                        basePointB = m_data->gemaDiffBox[i].empMin;
+                        vecNormalB = { 0.0f, -1.0f, 0.0f };
+                        break;
+                    default: //case0 // X inside (Min/Max) | Y inside (Min/Max) | Z inside (Min/Max)
+                        break;
+                    }
+
+                    for (uint32_t i = 0; i < cntExceedBound; i++)
+                    {
                     }
                 }
             }
+
+            if (m_data->gdfm.MaxAttenuation < 0)
+            {
+                srcObstruction = std::min(srcObstruction, m_data->gdfm.MaxAttenuation);
+                srcObstructionLF = std::min(srcObstructionLF, m_data->gdfm.LFRatio);
+            }
+            */
         }
-
-
     }
-
     return toInt(EalError::OK);
 }

@@ -16,29 +16,42 @@ private:
     /* buffered environment the listener position is in */
     int32_t                  m_listenerEnvIDIndex{};
 
+    template <typename T>
+    static int32_t ReadArrayData(
+            std::ifstream&    file,
+            uint32_t          count,
+            std::vector<T>&   dest,
+            uint32_t&         bytesRead
+            );
+
     int32_t EalGlobals(
             std::ifstream&   file,
             const FourCC     fourcc,
             uint32_t&        bytesRead
             );
+
     int32_t EalList(
             std::ifstream&                                          file,
             std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
             uint32_t&                                               bytesRead
             );
+
     int32_t EalEnvironmentAttributes(
             std::ifstream&                                          file,
             std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
             uint32_t&                                               bytesRead
             );
+
     int32_t EalObstacleAttributes(
             std::ifstream&   file,
             uint32_t&        bytesRead
             );
+
     int32_t EalSourceAttributes(
             std::ifstream&   file,
             uint32_t&        bytesRead
             );
+
     int32_t EalGeometryAttributes(
             std::ifstream&                                          file,
             std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
@@ -50,6 +63,7 @@ private:
             uint32_t&        count,
             uint32_t&        bytesRead
             );
+
     int32_t ReadNamsChunk(
             std::ifstream&              file,
             uint32_t                    count,
@@ -72,6 +86,7 @@ private:
             std::vector<T>&   dest,
             uint32_t&         bytesRead
             );
+
     int32_t ReadGemaChunk(
             std::ifstream&   file,
             uint32_t&        bytesRead
@@ -82,6 +97,7 @@ private:
             int32_t&                    id,
             std::vector<std::string>&   dataset
             ) const;
+
     template <typename T>
     int32_t GetAttributes(
             const int32_t     id,
