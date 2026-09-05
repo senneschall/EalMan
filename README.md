@@ -52,6 +52,7 @@ For example, it only processes .eal files with a single geometry set correctly -
 
 <details>
 <summary>Details</summary>
+
 | filename              | EaxMan average (ns) | EalMan average (ns) |
 | --------------------- | ------------------- | ------------------- |
 | `CTF-Command.eal`     | 2664438.880         | 157227.750          |
@@ -87,6 +88,7 @@ For example, it only processes .eal files with a single geometry set correctly -
 | `DM-Tempest.eal`      | 16360938.370        | 255518.780          |
 | `DM-Turbine.eal`      | 2158901.610         | 145334.010          |
 | `DM-Zeto.eal`         | 1613612.880         | 133189.260          |
+
 </details>
 
 #### GetListenerDynamicAttributes()
@@ -99,6 +101,7 @@ So it needs to do exception handling, which is quite expensive.
 
 <details>
 <summary>Details</summary>
+
 | filename              | EaxMan average (ns) | EalMan average (ns) |
 | --------------------- | ------------------- | ------------------- |
 | `CTF-Command.eal`     | 182.282             | 41.207              |
@@ -134,6 +137,7 @@ So it needs to do exception handling, which is quite expensive.
 | `DM-Tempest.eal`      | 232.794             | 56.267              |
 | `DM-Turbine.eal`      | 108.018             | 23.765              |
 | `DM-Zeto.eal`         | 69.096              | 12.129              |
+
 </details>
 
 #### GetSourceDynamicAttributes()
@@ -146,6 +150,7 @@ These diffraction calculations are quite expensive, even though the results are 
 
 <details>
 <summary>Details</summary>
+
 | filename              | EaxMan average (ns) | EalMan average (ns) |
 | --------------------- | ------------------- | ------------------- |
 | `CTF-Command.eal`     | 444.006             | 115.992             |
@@ -181,6 +186,7 @@ These diffraction calculations are quite expensive, even though the results are 
 | `DM-Tempest.eal`      | 747.375             | 193.562             |
 | `DM-Turbine.eal`      | 600.485             | 130.574             |
 | `DM-Zeto.eal`         | 110.569             | 19.907              |
+
 </details>
 
 ## License
