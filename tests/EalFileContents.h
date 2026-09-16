@@ -1,6 +1,6 @@
 #pragma once
 #include <gtest/gtest.h>
-#include "EalMan.h"
+#include "../src/EalMan.h"
 
 struct TestParameter
 {

@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "EalMan.h"
+#include "../src/EalMan.h"
 #include "EalFileContents.h"
 #include "EalFileLstPos.h"
 #include "EalFileSrcPos.h"
