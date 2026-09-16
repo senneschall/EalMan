@@ -16,6 +16,15 @@ private:
     /* buffered environment the listener position is in */
     int32_t                  m_listenerEnvIDIndex{};
 
+    int32_t computeDiffraction(
+        const EMPoint& listener,
+        const EMPoint& source,
+        const EMPoint& intersection,
+        const uint32_t boxSide,
+        const EMPoint& boxMin,
+        const EMPoint& boxMax
+        ) const;
+
     template <typename T>
     static int32_t ReadArrayData(
             std::ifstream&    file,
