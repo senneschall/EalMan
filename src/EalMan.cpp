@@ -152,6 +152,32 @@ static void normalize(
     }
 }
 
+int32_t EalMan::getIndexIDfromBSP(
+    int32_t&      idx,
+    const EMPoint pos
+) const
+{
+    SplitNode node{};
+    uint32_t child{ 0 };
+    while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
+    {
+        /* if (child < m_data->gemaNrInnerNodes ) */ // existance of some elements inside vector ensured at function start
+        { node = m_data->gemaBSPinnerNodes[child]; }
+        /* else { return toInt(EalError::IdNotFound); } */
+
+        child = (isInFront(pos, node.base, node.normal))
+            ? node.childFront
+            : node.childBack;
+    }
+    child &= 0x7FFFFFFF; // MSB unset to recover the índex of a Zone
+    /* if (child >= m_data->gemaNrOuterNods)
+    { return toInt(EalError::IdNotFound); } */
+    const Zone zone = m_data->gemaBSPouterNodes[child];
+
+    idx = zone.indexEnvID;
+    return toInt(EalError::OK);
+}
+
 int32_t EalMan::computeDiffraction(
     const EMPoint& listener,
     const EMPoint& source,
@@ -163,7 +189,7 @@ int32_t EalMan::computeDiffraction(
 {
     EMPoint edgePoint = intersection;
 
-    // 1. project intersection point onto relevant box plane
+    // 1. Projektion des Schnittpunkts auf die relevante Box-Kante
     switch (boxSide)
     {
     case 0:
@@ -188,19 +214,19 @@ int32_t EalMan::computeDiffraction(
     case 2:
     case 3:
         // projection onto X/Z
-        if (listener.fZ >= boxMin.fZ || listener.fZ <= boxMax.fZ)
-        {
-            edgePoint.fZ =
-                (intersection.fZ >= (boxMin.fZ + boxMax.fZ) * 0.5f)
-                ? boxMax.fZ
-                : boxMin.fZ;
-        }
-        else
+        if (listener.fZ < boxMin.fZ && listener.fZ > boxMax.fZ)
         {
             edgePoint.fX =
                 (intersection.fX >= (boxMin.fX + boxMax.fX) * 0.5f)
                 ? boxMin.fX
                 : boxMax.fX;
+        }
+        else
+        {
+            edgePoint.fZ =
+                (intersection.fZ >= (boxMin.fZ + boxMax.fZ) * 0.5f)
+                ? boxMax.fZ
+                : boxMin.fZ;
         }
         break;
 
@@ -1137,32 +1163,24 @@ int32_t EalMan::GetListenerDynamicAttributes(
             || lstPos.fZ < -32768.0 || lstPos.fZ > +32768.0)
     { return toInt(EalError::IdNotFound); }
 
-    SplitNode node{};
-    uint32_t child{0};
-    while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
+    int32_t idxEnvID{};
+    if (getIndexIDfromBSP(idxEnvID, lstPos) != toInt(EalError::OK))
+    { return toInt(EalError::IdNotFound); }
+
+    if (idxEnvID >= 0)
     {
-        /* if (child < m_data->gemaNrInnerNodes ) */ // existance of some elements inside vector ensured at function start
-        { node = m_data->gemaBSPinnerNodes[child]; }
-        /* else { return toInt(EalError::IdNotFound); } */
-
-        child = (isInFront(lstPos, node.base, node.normal))
-            ? node.childFront
-            : node.childBack;
+        envID = m_data->gemaEnvIDs[idxEnvID];
     }
-    child &= 0x7FFFFFFF; // MSB unset to recover the índex of a Zone
-    /* if (child >= m_data->gemaNrOuterNods)
-    { return toInt(EalError::IdNotFound); } */
-    const Zone zone = m_data->gemaBSPouterNodes[child];
-
-    if (zone.indexEnvID >= 0)
-    { envID = m_data->gemaEnvIDs[zone.indexEnvID]; }
     else
-    { envID = static_cast<int32_t>(EMFLAG_IDDEFAULT); }
+    {
+        envID = static_cast<int32_t>(EMFLAG_IDDEFAULT);
+    }
 
     if (flags == EMFLAG_LOCKPOSITION)
     {
         m_listenerPosition = lstPos;
-        m_listenerEnvIDIndex = static_cast<int32_t>(EMFLAG_IDDEFAULT);
+        m_listenerEnvIDIndex = idxEnvID;
+        /*
         for (uint32_t i = 0; i < m_data->gemaNrEnvIDs; i++)
         {
             if (m_data->gemaEnvIDs[i] == envID)
@@ -1171,6 +1189,7 @@ int32_t EalMan::GetListenerDynamicAttributes(
                 break;
             }
         }
+        */
     }
 
     return toInt(EalError::OK);
@@ -1207,8 +1226,9 @@ int32_t EalMan::GetSourceDynamicAttributes(
             || srcPos.fZ < -32768.0 || srcPos.fZ > +32768.0)
     { return toInt(EalError::IdNotFound); }
 
-    int32_t envID_srcPos{};
     int32_t src_EnvIDIndex = static_cast<int32_t>(EMFLAG_IDDEFAULT);
+    /*
+    int32_t envID_srcPos{};
     if (GetListenerDynamicAttributes(geomID, srcPos, envID_srcPos, 0) == toInt(EalError::OK))
     {
         for (uint32_t i = 0; i < m_data->gemaNrEnvIDs; i++)
@@ -1219,6 +1239,11 @@ int32_t EalMan::GetSourceDynamicAttributes(
                 break;
             }
         }
+    }
+    */
+    if (getIndexIDfromBSP(src_EnvIDIndex, srcPos) != toInt(EalError::OK))
+    {
+        return toInt(EalError::IdNotFound);
     }
 
     const int32_t obsID = m_data->gemaEnvironmentMatrix[
@@ -1311,7 +1336,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
                 if (m_data->gemaDiffBox[limit].empMin.fY <= m_listenerPosition.fY)
                 {
-                    if (m_data->gemaDiffBox[limit].empMax.fY <= m_listenerPosition.fY)
+                    if (m_data->gemaDiffBox[limit].empMax.fY < m_listenerPosition.fY)
                     { relLstPos.set(2); }
                 }
                 else
@@ -1319,7 +1344,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
                 if (m_data->gemaDiffBox[limit].empMin.fZ <= m_listenerPosition.fZ)
                 {
-                    if (m_data->gemaDiffBox[limit].empMax.fZ <= m_listenerPosition.fZ)
+                    if (m_data->gemaDiffBox[limit].empMax.fZ < m_listenerPosition.fZ)
                     {
                         relLstPos.set(0);
                     }
@@ -1333,7 +1358,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
                 if (m_data->gemaDiffBox[limit].empMin.fX <= srcPos.fX)
                 {
-                    if (m_data->gemaDiffBox[limit].empMax.fX <= srcPos.fX)
+                    if (m_data->gemaDiffBox[limit].empMax.fX < srcPos.fX)
                     { relSrcPos.set(4); }
                 }
                 else
@@ -1341,7 +1366,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
                 if (m_data->gemaDiffBox[limit].empMin.fY <= srcPos.fY)
                 {
-                    if (m_data->gemaDiffBox[limit].empMax.fY <= srcPos.fY)
+                    if (m_data->gemaDiffBox[limit].empMax.fY < srcPos.fY)
                     { relSrcPos.set(2); }
                 }
                 else

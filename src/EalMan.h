@@ -16,6 +16,11 @@ private:
     /* buffered environment the listener position is in */
     int32_t                  m_listenerEnvIDIndex{};
 
+    int32_t getIndexIDfromBSP(
+        int32_t&      idx,
+        const EMPoint pos
+    ) const;
+
     int32_t computeDiffraction(
         const EMPoint& listener,
         const EMPoint& source,
