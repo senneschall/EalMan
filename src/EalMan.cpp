@@ -224,7 +224,7 @@ int32_t EalMan::computeDiffraction(
         else
         {
             edgePoint.fZ =
-                (intersection.fZ >= (boxMin.fZ + boxMax.fZ) * 0.5f)
+                (intersection.fZ < (boxMin.fZ + boxMax.fZ) * 0.5f)
                 ? boxMax.fZ
                 : boxMin.fZ;
         }
@@ -239,6 +239,7 @@ int32_t EalMan::computeDiffraction(
                 (intersection.fY >= (boxMin.fY + boxMax.fY) * 0.5f)
                 ? boxMin.fY
                 : boxMax.fY;
+            break;
         }
         else
         {
@@ -274,10 +275,12 @@ int32_t EalMan::computeDiffraction(
     if (dot < 0.0f)
     {
         float angle = dot + 1.0f; // 1 - cos(theta)
+        float anglemax = static_cast<float>(m_data->gdfm.AngleMaxAttenuation) / 90.0f;
 
-        if (angle < (m_data->gdfm.AngleMaxAttenuation / 90.0f))
+        if (angle < anglemax)
         {
-            return static_cast<int32_t>(angle);
+            float a = static_cast<float>(m_data->gdfm.MaxAttenuation) * angle / anglemax;
+            return static_cast<int32_t>(a);
         }
     }
 
