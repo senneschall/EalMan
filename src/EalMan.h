@@ -10,24 +10,24 @@ class EalMan
 {
 private:
     /* organized data read from an .eal file */
-    std::unique_ptr<EalData> m_data{};
+    std::unique_ptr<EalData>   m_data{};
     /* buffered listener position */
-    EMPoint                  m_listenerPosition{};
+    EMPoint                    m_listenerPosition{};
     /* buffered environment the listener position is in */
-    int32_t                  m_listenerEnvIDIndex{};
+    int32_t                    m_listenerEnvIDIndex{};
 
     int32_t getIndexIDfromBSP(
-        int32_t&      idx,
-        const EMPoint pos
+        int32_t&        idx,
+        const EMPoint   pos
     ) const;
 
     int32_t computeDiffraction(
-        const EMPoint& listener,
-        const EMPoint& source,
-        const EMPoint& intersection,
-        const uint32_t boxSide,
-        const EMPoint& boxMin,
-        const EMPoint& boxMax
+        const EMPoint&   listener,
+        const EMPoint&   source,
+        const EMPoint&   intersection,
+        const uint32_t   boxSide,
+        const EMPoint&   boxMin,
+        const EMPoint&   boxMax
         ) const;
 
     template <typename T>
