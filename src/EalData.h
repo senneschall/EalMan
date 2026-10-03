@@ -39,6 +39,7 @@ public:
     // GEMA Chunk info
     uint32_t gemaNrSrcIDs{};
     uint32_t gemaNrEnvIDs{};
+    uint32_t gemaStartID{};
     uint32_t gemaNrInnerNodes{};
     uint32_t gemaNrOuterNodes{};
     uint32_t gemaNrDiffBox{};

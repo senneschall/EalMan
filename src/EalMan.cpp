@@ -158,7 +158,7 @@ int32_t EalMan::getIndexIDfromBSP(
 ) const
 {
     SplitNode node{};
-    uint32_t child{ 0 };
+    uint32_t child = m_data->gemaStartID;
     while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
     {
         /* if (child < m_data->gemaNrInnerNodes ) */ // boundary check done at loading
@@ -524,15 +524,15 @@ int32_t EalMan::ReadGemaChunk(
 
     uint32_t nrSrcs{};
     uint32_t nrEnvs{};
-    uint32_t nrUnknown{};
+    uint32_t startID{};
     uint32_t nrPlanes{};
     uint32_t nrLeaves{};
 
-    if (   readNumber(file, nrSrcs, bytesRead)    != toInt(EalError::OK)
-        || readNumber(file, nrEnvs, bytesRead)    != toInt(EalError::OK)
-        || readNumber(file, nrUnknown, bytesRead) != toInt(EalError::OK)
-        || readNumber(file, nrPlanes, bytesRead)  != toInt(EalError::OK)
-        || readNumber(file, nrLeaves, bytesRead)  != toInt(EalError::OK))
+    if (   readNumber(file, nrSrcs, bytesRead)   != toInt(EalError::OK)
+        || readNumber(file, nrEnvs, bytesRead)   != toInt(EalError::OK)
+        || readNumber(file, startID, bytesRead)  != toInt(EalError::OK)
+        || readNumber(file, nrPlanes, bytesRead) != toInt(EalError::OK)
+        || readNumber(file, nrLeaves, bytesRead) != toInt(EalError::OK))
     { return toInt(EalError::FileInvalid); }
 
     const uint32_t envMatrixSize = (nrEnvs + 1) * (nrEnvs + 1);
@@ -550,6 +550,7 @@ int32_t EalMan::ReadGemaChunk(
 
     m_data->gemaNrSrcIDs = nrSrcs;
     m_data->gemaNrEnvIDs = nrEnvs;
+    m_data->gemaStartID = startID;
     m_data->gemaNrInnerNodes = nrPlanes;
     m_data->gemaNrOuterNodes = nrLeaves;
 
