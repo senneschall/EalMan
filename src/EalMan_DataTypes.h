@@ -1,6 +1,13 @@
 #pragma once
 #include <cstdint>
 
+struct EMPoint
+{
+    float fX{};
+    float fY{};
+    float fZ{};
+};
+
 // include the structs of eax.h
 struct EAXBufferProperties
 {
@@ -16,6 +23,28 @@ struct EAXBufferProperties
     float    flOcclusionRoomRatio{};    // occlusion room effect level re. main control
     int32_t  lOutsideVolumeHF{};        // outside sound cone level at high frequencies
     float    flAirAbsorptionFactor{};   // multiplies DSPROPERTY_EAXLISTENER_AIRABSORPTIONHF
+    uint32_t dwFlags{};                 // modifies the behavior of properties
+};
+
+struct EAXSourceProperties
+{
+    int32_t  lDirect{};                 // direct path level (at low and mid frequencies)
+    int32_t  lDirectHF{};               // relative direct path level at high frequencies
+    int32_t  lRoom{};                   // room effect level (at low and mid frequencies)
+    int32_t  lRoomHF{};                 // relative room effect level at high frequencies
+    int32_t  lObstruction{};            // main obstruction control (attenuation at high frequencies)
+    float    flObstructionLFRatio{};    // obstruction low-frequency level re. main control
+    int32_t  lOcclusion{};              // main occlusion control (attenuation at high frequencies)
+    float    flOcclusionLFRatio{};      // occlusion low-frequency level re. main control
+    float    flOcclusionRoomRatio{};    // relative occlusion control for room effect
+    float    flOcclusionDirectRatio{};  // relative occlusion control for direct path
+    int32_t  lExclusion{};              // main exlusion control (attenuation at high frequencies)
+    float    flExclusionLFRatio{};      // exclusion low-frequency level re. main control
+    int32_t  lOutsideVolumeHF{};        // outside sound cone level at high frequencies
+    float    flDopplerFactor{};         // like DS3D flDopplerFactor but per source
+    float    flRolloffFactor{};         // like DS3D flRolloffFactor but per source
+    float    flRoomRolloffFactor{};     // like DS3D flRolloffFactor but for room effect
+    float    flAirAbsorptionFactor{};   // multiplies EAXREVERB_AIRABSORPTIONHF
     uint32_t dwFlags{};                 // modifies the behavior of properties
 };
 
@@ -41,6 +70,32 @@ enum class EalBufferProperty
 
 struct EAXListenerProperties
 {
+#if EAXMANVERSION == 3
+    uint32_t ulEnvironment{};            // sets all reverb properties
+    float    flEnvironmentSize{};        // environment size in meters
+    float    flEnvironmentDiffusion{};   // environment diffusion
+    int32_t  lRoom{};                    // room effect level (at mid frequencies)
+    int32_t  lRoomHF{};                  // relative room effect level at high frequencies
+    int32_t  lRoomLF{};                  // relative room effect level at low frequencies
+    float    flDecayTime{};              // reverberation decay time at mid frequencies
+    float    flDecayHFRatio{};           // high-frequency to mid-frequency decay time ratio
+    float    flDecayLFRatio{};           // low-frequency to mid-frequency decay time ratio
+    int32_t  lReflections{};             // early reflections level relative to room effect
+    float    flReflectionsDelay{};       // initial reflection delay time
+    EMPoint  vReflectionsPan{};          // early reflections panning vector
+    int32_t  lReverb{};                  // late reverberation level relative to room effect
+    float    flReverbDelay{};            // late reverberation delay time relative to initial reflection
+    EMPoint  vReverbPan{};               // late reverberation panning vector
+    float    flEchoTime{};               // echo time
+    float    flEchoDepth{};              // echo depth
+    float    flModulationTime{};         // modulation time
+    float    flModulationDepth{};        // modulation depth
+    float    flAirAbsorptionHF{};        // change in level per meter at high frequencies
+    float    flHFReference{};            // reference high frequency
+    float    flLFReference{};            // reference low frequency
+    float    flRoomRolloffFactor{};      // like DS3D flRolloffFactor but for room effect
+    uint32_t ulFlags{};                  // modifies the behavior of properties
+#else
     int32_t  lRoom{};                    // room effect level at low frequencies
     int32_t  lRoomHF{};                  // room effect high-frequency level re. low frequency level
     float    flRoomRolloffFactor{};      // like DS3D flRolloffFactor but for room effect
@@ -55,6 +110,7 @@ struct EAXListenerProperties
     float    flEnvironmentDiffusion{};   // environment diffusion
     float    flAirAbsorptionHF{};        // change in level per meter at 5 kHz
     uint32_t dwFlags{};                  // modifies the behavior of properties
+#endif
 };
 
 enum class DSPPropertyEAXListenerProperty
@@ -135,13 +191,6 @@ constexpr uint32_t EMFLAG_NODIFFRACTION  = 4;
 constexpr uint32_t EMMATERIAL_OBSTRUCTS  = 1;
 constexpr uint32_t EMMATERIAL_OCCLUDES   = 3;
 
-struct EMPoint
-{
-    float fX{};
-    float fY{};
-    float fZ{};
-};
-
 struct ListenerAttributes
 {
     float fDistanceFactor{};
@@ -151,7 +200,11 @@ struct ListenerAttributes
 
 struct SourceAttributes
 {
+#if EAXMANVERSION == 3
+    EAXSourceProperties eaxAttributes{};
+#else
     EAXBufferProperties eaxAttributes{};
+#endif
     uint32_t ulInsideConeAngle{};
     uint32_t ulOutsideConeAngle{};
     int32_t  lConeOutsideVolume{};

@@ -364,9 +364,17 @@ int32_t EalMan::EalGlobals(
 {
     switch (fourcc) {
         case FourCC::MAJV:
+#if EAXMANVERSION == 3
+            return readVer(file, 3, bytesRead);
+#else
             return readVer(file, 2, bytesRead);
+#endif
         case FourCC::MINV:
+#if EAXMANVERSION == 3
+            return readVer(file, 0, bytesRead);
+#else
             return readVer(file, 1, bytesRead);
+#endif
         case FourCC::EXEP:
             /* return readString(file, m_data->defExep, bytesRead); */
             file.ignore(260);
@@ -543,7 +551,7 @@ int32_t EalMan::ReadGemaChunk(
         if (ReadArrayData(file, nrSrcs, m_data->gemaSources, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); } // Source Pos
     }
     if (!(nrEnvs > 0   && ReadArrayData(file, nrEnvs, m_data->gemaEnvIDs, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Env IDs
-    if (!(nrEnvs > 0 && ReadArrayData(file, nrEnvs, m_data->gemaDiffraction, bytesRead) == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Diffraction
+    if (!(nrEnvs > 0   && ReadArrayData(file, nrEnvs, m_data->gemaDiffraction, bytesRead) == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Diffraction
     if (!(envMatrixSize > 1 && ReadArrayData(file, envMatrixSize, m_data->gemaEnvironmentMatrix, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // Environment Matrix
     if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP inner tree
     if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP outer tree
@@ -722,6 +730,29 @@ inline bool EalMan::isDEFLdataPlausible() const
 
 inline bool EalMan::isDEFEdataPlausible() const
 {
+#if EAXMANVERSION == 3
+    return std::isfinite(m_data->defEnvironment.flEnvironmentSize)
+            && std::isfinite(m_data->defEnvironment.flEnvironmentDiffusion)
+            && std::isfinite(m_data->defEnvironment.flDecayTime)
+            && std::isfinite(m_data->defEnvironment.flDecayHFRatio)
+            && std::isfinite(m_data->defEnvironment.flDecayLFRatio)
+            && std::isfinite(m_data->defEnvironment.flReflectionsDelay)
+            && std::isfinite(m_data->defEnvironment.vReflectionsPan.fX)
+            && std::isfinite(m_data->defEnvironment.vReflectionsPan.fY)
+            && std::isfinite(m_data->defEnvironment.vReflectionsPan.fZ)
+            && std::isfinite(m_data->defEnvironment.flReverbDelay)
+            && std::isfinite(m_data->defEnvironment.vReverbPan.fX)
+            && std::isfinite(m_data->defEnvironment.vReverbPan.fY)
+            && std::isfinite(m_data->defEnvironment.vReverbPan.fZ)
+            && std::isfinite(m_data->defEnvironment.flEchoTime)
+            && std::isfinite(m_data->defEnvironment.flEchoDepth)
+            && std::isfinite(m_data->defEnvironment.flModulationTime)
+            && std::isfinite(m_data->defEnvironment.flModulationDepth)
+            && std::isfinite(m_data->defEnvironment.flAirAbsorptionHF)
+            && std::isfinite(m_data->defEnvironment.flHFReference)
+            && std::isfinite(m_data->defEnvironment.flLFReference)
+            && std::isfinite(m_data->defEnvironment.flRoomRolloffFactor);
+#else
     return std::isfinite(m_data->defEnvironment.flRoomRolloffFactor)
             && std::isfinite(m_data->defEnvironment.flDecayTime)
             && std::isfinite(m_data->defEnvironment.flDecayHFRatio)
@@ -730,20 +761,38 @@ inline bool EalMan::isDEFEdataPlausible() const
             && std::isfinite(m_data->defEnvironment.flEnvironmentSize)
             && std::isfinite(m_data->defEnvironment.flEnvironmentDiffusion)
             && std::isfinite(m_data->defEnvironment.flAirAbsorptionHF);
+#endif
 }
 
 inline bool EalMan::isDEFSdataPlausible() const
 {
+#if EAXMANVERSION == 3
     return std::isfinite(m_data->defSource.fConeXdir)
-            && std::isfinite(m_data->defSource.fConeYdir)
-            && std::isfinite(m_data->defSource.fConeZdir)
-            && std::isfinite(m_data->defSource.fMinDistance)
-            && std::isfinite(m_data->defSource.fMaxDistance)
-            && std::isfinite(m_data->defSource.eaxAttributes.flRoomRolloffFactor)
-            && std::isfinite(m_data->defSource.eaxAttributes.flObstructionLFRatio)
-            && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionLFRatio)
-            && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionRoomRatio)
-            && std::isfinite(m_data->defSource.eaxAttributes.flAirAbsorptionFactor);
+        && std::isfinite(m_data->defSource.fConeYdir)
+        && std::isfinite(m_data->defSource.fConeZdir)
+        && std::isfinite(m_data->defSource.fMinDistance)
+        && std::isfinite(m_data->defSource.fMaxDistance)
+        && std::isfinite(m_data->defSource.eaxAttributes.flObstructionLFRatio)
+        && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionLFRatio)
+        && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionRoomRatio)
+//        && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionDirectRatio) // duel8.eal does contain a NaN here
+        && std::isfinite(m_data->defSource.eaxAttributes.flExclusionLFRatio)
+        && std::isfinite(m_data->defSource.eaxAttributes.flDopplerFactor)
+        && std::isfinite(m_data->defSource.eaxAttributes.flRolloffFactor)
+        && std::isfinite(m_data->defSource.eaxAttributes.flRoomRolloffFactor)
+        && std::isfinite(m_data->defSource.eaxAttributes.flAirAbsorptionFactor);
+#else
+    return std::isfinite(m_data->defSource.fConeXdir)
+        && std::isfinite(m_data->defSource.fConeYdir)
+        && std::isfinite(m_data->defSource.fConeZdir)
+        && std::isfinite(m_data->defSource.fMinDistance)
+        && std::isfinite(m_data->defSource.fMaxDistance)
+        && std::isfinite(m_data->defSource.eaxAttributes.flRoomRolloffFactor)
+        && std::isfinite(m_data->defSource.eaxAttributes.flObstructionLFRatio)
+        && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionLFRatio)
+        && std::isfinite(m_data->defSource.eaxAttributes.flOcclusionRoomRatio)
+        && std::isfinite(m_data->defSource.eaxAttributes.flAirAbsorptionFactor);
+#endif
 }
 
 
@@ -758,16 +807,42 @@ bool EalMan::isLISPdataPlausible() const
     bool plausible{true};
     for (const EAXListenerProperties& lp : m_data->environments)
     {
+#if EAXMANVERSION == 3
         plausible = plausible
-                && std::isfinite(lp.flRoomRolloffFactor)
-                && std::isfinite(lp.flDecayTime)
-                && std::isfinite(lp.flDecayHFRatio)
-                && std::isfinite(lp.flReflectionsDelay)
-                && std::isfinite(lp.flReverbDelay)
-                && std::isfinite(lp.flEnvironmentSize)
-                && std::isfinite(lp.flEnvironmentDiffusion)
-                && std::isfinite(lp.flAirAbsorptionHF)
-                ;
+            && std::isfinite(lp.flEnvironmentSize)
+            && std::isfinite(lp.flEnvironmentDiffusion)
+            && std::isfinite(lp.flDecayTime)
+            && std::isfinite(lp.flDecayHFRatio)
+            && std::isfinite(lp.flDecayLFRatio)
+            && std::isfinite(lp.flReflectionsDelay)
+            && std::isfinite(lp.vReflectionsPan.fX)
+            && std::isfinite(lp.vReflectionsPan.fY)
+            && std::isfinite(lp.vReflectionsPan.fZ)
+            && std::isfinite(lp.flReverbDelay)
+            && std::isfinite(lp.vReverbPan.fX)
+            && std::isfinite(lp.vReverbPan.fY)
+            && std::isfinite(lp.vReverbPan.fZ)
+            && std::isfinite(lp.flEchoTime)
+            && std::isfinite(lp.flEchoDepth)
+            && std::isfinite(lp.flModulationTime)
+            && std::isfinite(lp.flModulationDepth)
+            && std::isfinite(lp.flAirAbsorptionHF)
+            && std::isfinite(lp.flHFReference)
+            && std::isfinite(lp.flLFReference)
+            && std::isfinite(lp.flRoomRolloffFactor)
+            ;
+#else
+        plausible = plausible
+            && std::isfinite(lp.flRoomRolloffFactor)
+            && std::isfinite(lp.flDecayTime)
+            && std::isfinite(lp.flDecayHFRatio)
+            && std::isfinite(lp.flReflectionsDelay)
+            && std::isfinite(lp.flReverbDelay)
+            && std::isfinite(lp.flEnvironmentSize)
+            && std::isfinite(lp.flEnvironmentDiffusion)
+            && std::isfinite(lp.flAirAbsorptionHF)
+            ;
+#endif
     }
     return plausible;
 }
@@ -790,13 +865,37 @@ bool EalMan::isSRCAdataPlausible() const
     bool plausible{true};
     for (const SourceAttributes& sa : m_data->sources)
     {
+#if EAXMANVERSION == 3
         plausible = plausible
                 && std::isfinite(sa.fConeXdir)
                 && std::isfinite(sa.fConeYdir)
                 && std::isfinite(sa.fConeZdir)
                 && std::isfinite(sa.fMinDistance)
                 && std::isfinite(sa.fMaxDistance)
+                && std::isfinite(sa.eaxAttributes.flObstructionLFRatio)
+                && std::isfinite(sa.eaxAttributes.flOcclusionLFRatio)
+                && std::isfinite(sa.eaxAttributes.flOcclusionRoomRatio)
+//                && std::isfinite(sa.eaxAttributes.flOcclusionDirectRatio) // t1_fatal.eal does contain a NaN here
+//                && std::isfinite(sa.eaxAttributes.flExclusionLFRatio) // duel6.eal does contain a NaN here
+                && std::isfinite(sa.eaxAttributes.flDopplerFactor)
+                && std::isfinite(sa.eaxAttributes.flRolloffFactor)
+                && std::isfinite(sa.eaxAttributes.flRoomRolloffFactor)
+                && std::isfinite(sa.eaxAttributes.flAirAbsorptionFactor)
                 ;
+#else
+        plausible = plausible
+            && std::isfinite(sa.fConeXdir)
+            && std::isfinite(sa.fConeYdir)
+            && std::isfinite(sa.fConeZdir)
+            && std::isfinite(sa.fMinDistance)
+            && std::isfinite(sa.fMaxDistance)
+            && std::isfinite(sa.eaxAttributes.flRoomRolloffFactor)
+            && std::isfinite(sa.eaxAttributes.flObstructionLFRatio)
+            && std::isfinite(sa.eaxAttributes.flOcclusionLFRatio)
+            && std::isfinite(sa.eaxAttributes.flOcclusionRoomRatio)
+            && std::isfinite(sa.eaxAttributes.flAirAbsorptionFactor);
+            ;
+#endif
     }
     return plausible;
 }
@@ -1197,7 +1296,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
         float&           srcOcclusionLF,
         float&           srcOcclusionRM,
         EMPoint&         virtPos,
-        [[maybe_unused]] const uint32_t   flags
+        const uint32_t   flags
         )
 {
     // defaults
@@ -1446,3 +1545,16 @@ int32_t EalMan::GetSourceDynamicAttributes(
     }
     return toInt(EalError::OK);
 }
+
+#if EAXMANVERSION == 3
+int32_t EalMan::GetEnvironmentName(
+        const int32_t    envID,
+        std::string&     envName,
+        [[maybe_unused]] const uint32_t   maxNameSize
+        ) const
+{
+    if (envID < 0 || static_cast<uint32_t>(envID) >= m_data->nrEnvironments) { return toInt(EalError::InvalidId); }
+    envName = m_data->envNames[envID];
+    return toInt(EalError::OK);
+}
+#endif

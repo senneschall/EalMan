@@ -5,13 +5,15 @@ A cross-platform, architecture-independent reimplementation of Creative's *EaxMa
 ## Introduction
 
 **EalMan** is a library that decodes *.eal* files to retrieve the EAX environment parameters.
-The aim is to provide the same functionality as the *EaxMan.dll* from *Creative's EAX patches* for *Unreal Tournament*.
+The original aim is to provide the same functionality as the *EaxMan.dll* from *Creative's EAX patches* for *Unreal Tournament*.
 It uses the information about *.eal* file details explained in [senneschall/EAXManagerEAL](https://github.com/senneschall/EAXManagerEAL).
+
+During development, the project expanded to also work as a replacement for *EaxMan.dll* from *Star Wars Jedi Knight: Jedi Academy*.
 
 ### What it does
 
-Just like *EAXManager*, *EalMan* does not set the actual *DirectSound3d (EAX) / OpenAL (EFX)* parameters, but simply returns the proper values for them.
-Programs using *EalMan* must then ensure that these parameters are actually set.
+Just like *EAXManager*, **EalMan** does not set the actual *DirectSound3d (EAX) / OpenAL (EFX)* parameters, but simply returns the proper values for them.
+Programs using **EalMan** must then ensure that these parameters are actually set.
 
 ## Use EalMan
 
@@ -19,6 +21,8 @@ The API is kept compatible to EAXMan.
 
 1. Load an *.eal* file first:
 ```
+#include "EalMan.h";
+
 std::unique_ptr<EalMan> ealman = std::make_unique<EalMan>();
 ealman->LoadDataSet(filename, 0);
 ```
@@ -61,6 +65,11 @@ ealMan->GetSourceDynamicAttributes(0, posSource, srcObstruction, srcObstructionL
 
 Compile with any C++17 compatible compiler.
 No further dependencies were introduced, by design.
+
+### Compilation options
+
+**EalMan** does keep its API compatible to *EaxMan.dll* *v2.0.1.1* by default.
+It you need compatibility with *EaxMan.dll* *v3.0.0.0*, compile **EalMan** with the parameter `EAXMANVERSION=3`.
 
 ## Testing
 
@@ -243,6 +252,12 @@ The difference is a bit smaller because for some sources, the diffraction box ca
 | `DM-Zeto.eal`         | 129.37              | 59.05               |
 
 </details>
+
+## About
+
+**EalMan** is entirely written by hand.
+There is no contribution done by any AI/LLM.
+LLMs were used only to answer questions about setting up and using the necessary tools.
 
 ## License
 

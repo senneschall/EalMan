@@ -330,4 +330,19 @@ public:
             const uint32_t   flags
             );
 
+#if EAXMANVERSION == 3
+    /**
+     * @brief gets the environment name for a source given its ID
+     *
+     * @param srcID [in] environment ID, whose name is to be searched for
+     * @param envName [out] environment name
+     * @param maxNameSize [in] maximum name size (currently unused)
+     * @return EM_OK, EM_INVALIDID
+     */
+    int32_t GetEnvironmentName(
+            const int32_t    envID,
+            std::string&     envName,
+            const uint32_t   maxNameSize
+            ) const;
+#endif
 };
