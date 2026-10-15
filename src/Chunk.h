@@ -17,7 +17,7 @@ public:
 
     // Liest den Chunk-Header (8 Bytes)
     int32_t read(
-            std::ifstream&   file
+            std::istream&   file
             );
 
     // Prüft, ob der Chunk einem bestimmten FourCC entspricht

@@ -32,61 +32,61 @@ private:
 
     template <typename T>
     static int32_t ReadArrayData(
-            std::ifstream&    file,
+            std::istream&     file,
             uint32_t          count,
             std::vector<T>&   dest,
             uint32_t&         bytesRead
             );
 
     int32_t EalGlobals(
-            std::ifstream&   file,
-            const FourCC     fourcc,
-            uint32_t&        bytesRead
+            std::istream&   file,
+            const FourCC    fourcc,
+            uint32_t&       bytesRead
             );
 
     int32_t EalList(
-            std::ifstream&                                          file,
+            std::istream&                                           file,
             std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
             uint32_t&                                               bytesRead
             );
 
     int32_t EalEnvironmentAttributes(
-            std::ifstream&                                          file,
+            std::istream&                                           file,
             std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
             uint32_t&                                               bytesRead
             );
 
     int32_t EalObstacleAttributes(
-            std::ifstream&   file,
-            uint32_t&        bytesRead
+            std::istream&   file,
+            uint32_t&       bytesRead
             );
 
     int32_t EalSourceAttributes(
-            std::ifstream&   file,
-            uint32_t&        bytesRead
+            std::istream&   file,
+            uint32_t&       bytesRead
             );
 
     int32_t EalGeometryAttributes(
-            std::ifstream&                                          file,
+            std::istream&                                           file,
             std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
             uint32_t&                                               bytesRead
             );
 
     int32_t ReadNumsChunk(
-            std::ifstream&   file,
-            uint32_t&        count,
-            uint32_t&        bytesRead
+            std::istream&   file,
+            uint32_t&       count,
+            uint32_t&       bytesRead
             );
 
     int32_t ReadNamsChunk(
-            std::ifstream&              file,
+            std::istream&               file,
             uint32_t                    count,
             std::vector<std::string>&   dest,
             uint32_t&                   bytesRead
             );
     /*
     int32_t ReadFilsChunk(
-            std::ifstream&              file,
+            std::istream&               file,
             uint32_t                    count,
             std::vector<std::string>&   dest,
             uint32_t&                   bytesRead
@@ -94,7 +94,7 @@ private:
     */
     template <typename T>
     int32_t ReadDataChunk(
-            std::ifstream&    file,
+            std::istream&     file,
             uint32_t          count,
             const FourCC      fourCC,
             std::vector<T>&   dest,
@@ -102,8 +102,8 @@ private:
             );
 
     int32_t ReadGemaChunk(
-            std::ifstream&   file,
-            uint32_t&        bytesRead
+            std::istream&   file,
+            uint32_t&       bytesRead
             );
 
     int32_t GetID(
@@ -119,6 +119,10 @@ private:
             T&                attributes,
             std::vector<T>&   dataset
             ) const;
+
+    int32_t ParseDataSet(
+            std::istream&   file
+            );
 
     inline bool isGDFMdataPlausible() const;
     inline bool isDEFLdataPlausible() const;
@@ -156,6 +160,16 @@ public:
     int32_t LoadDataSet(
             const std::string&   filename,
             const uint32_t       flags
+            );
+
+    /**
+     * @brief method loads an eal from memory into EalManager and sets it up for usage
+     *
+     * @param file [in] memory stream of eal to load
+     * @return EM_OK, EM_FILENOTFOUND, EM_FILEINVALID, EM_VERSIONINVALID
+     */
+    int32_t LoadDataSetFromMemory(
+            std::istream&   file
             );
 
     /**

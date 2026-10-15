@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <istream>
 #include <string>
 #include <vector>
 
@@ -33,9 +34,9 @@ inline static float scalarProduct(
 }
 
 inline static bool isInFront(
-    const EMPoint point,
-    const EMPoint base,
-    const EMPoint normal
+    const EMPoint   point,
+    const EMPoint   base,
+    const EMPoint   normal
     )
 {
     /*
@@ -55,11 +56,11 @@ inline static bool isInFront(
 }
 
 static bool getIntersectionPoint(
-    const EMPoint coordPointA,
-    const EMPoint coordPointB,
-    const EMPoint coordPlaneBase,
-    const EMPoint vecPlaneNormal,
-    EMPoint& intersection
+    const EMPoint   coordPointA,
+    const EMPoint   coordPointB,
+    const EMPoint   coordPlaneBase,
+    const EMPoint   vecPlaneNormal,
+    EMPoint&        intersection
     )
 {
     intersection = {};
@@ -86,10 +87,10 @@ static bool getIntersectionPoint(
 }
 
 static bool isIntersectInsideDiffbox(
-    const EMPoint& intersect,
-    const uint32_t boxSide,
-    const EMPoint& dbMin,
-    const EMPoint& dbMax
+    const EMPoint&   intersect,
+    const uint32_t   boxSide,
+    const EMPoint&   dbMin,
+    const EMPoint&   dbMax
 )
 {
     switch (boxSide)
@@ -139,7 +140,7 @@ static bool isIntersectInsideDiffbox(
 }
 
 static void normalize(
-    EMPoint& v
+    EMPoint&   v
 )
 {
     float len = sqrtf(scalarProduct(v.fX, v.fY, v.fZ, v.fX, v.fY, v.fZ));
@@ -153,8 +154,8 @@ static void normalize(
 }
 
 static bool compareStringCaseInvariant(
-    const std::string& left,
-    const std::string& right
+    const std::string&   left,
+    const std::string&   right
 )
 {
     if (left.size() != right.size()) { return false; }
@@ -169,8 +170,8 @@ static bool compareStringCaseInvariant(
 }
 
 int32_t EalMan::getIndexIDfromBSP(
-    int32_t&      idx,
-    const EMPoint pos
+    int32_t&        idx,
+    const EMPoint   pos
 ) const
 {
     SplitNode node{};
@@ -195,12 +196,12 @@ int32_t EalMan::getIndexIDfromBSP(
 }
 
 int32_t EalMan::computeDiffraction(
-    const EMPoint& listener,
-    const EMPoint& source,
-    const EMPoint& intersection,
-    const uint32_t boxSide,
-    const EMPoint& boxMin,
-    const EMPoint& boxMax
+    const EMPoint&   listener,
+    const EMPoint&   source,
+    const EMPoint&   intersection,
+    const uint32_t   boxSide,
+    const EMPoint&   boxMin,
+    const EMPoint&   boxMax
 ) const
 {
     EMPoint edgePoint = intersection;
@@ -304,9 +305,9 @@ int32_t EalMan::computeDiffraction(
 
 template<typename T>
 int32_t readStruct(
-        std::ifstream&   file,
-        T&               target,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        T&              target,
+        uint32_t&       bytesRead
         )
 {
     std::array<char, sizeof(T)> raw{};
@@ -318,9 +319,9 @@ int32_t readStruct(
 }
 
 static int32_t readNumber(
-        std::ifstream&   file,
-        uint32_t&        number,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        uint32_t&       number,
+        uint32_t&       bytesRead
         )
 {
     std::array<char, 4> bytes{};
@@ -334,7 +335,7 @@ static int32_t readNumber(
 }
 
 static int32_t readVer(
-        std::ifstream&   file,
+        std::istream&    file,
         const uint32_t   version,
         uint32_t&        bytesRead
         )
@@ -346,7 +347,7 @@ static int32_t readVer(
 
 template <typename T>
 int32_t EalMan::ReadArrayData(
-        std::ifstream&    file,
+        std::istream&     file,
         uint32_t          count,
         std::vector<T>&   dest,
         uint32_t&         bytesRead
@@ -359,7 +360,7 @@ int32_t EalMan::ReadArrayData(
 }
 /*
 static int32_t readString(
-    std::ifstream& file,
+    std::istream& file,
     std::array<char, 260>& text,
     uint32_t& bytesRead
 )
@@ -373,9 +374,9 @@ static int32_t readString(
 }
 */
 int32_t EalMan::EalGlobals(
-        std::ifstream&   file,
-        const FourCC     fourcc,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        const FourCC    fourcc,
+        uint32_t&       bytesRead
         )
 {
     switch (fourcc) {
@@ -422,7 +423,7 @@ int32_t EalMan::EalGlobals(
 }
 
 int32_t EalMan::EalList(
-        std::ifstream&                                          file,
+        std::istream&                                           file,
         std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
         uint32_t&                                               bytesRead
         )
@@ -444,9 +445,9 @@ int32_t EalMan::EalList(
 }
 
 int32_t EalMan::ReadNumsChunk(
-        std::ifstream&   file,
-        uint32_t&        count,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        uint32_t&       count,
+        uint32_t&       bytesRead
         )
 {
     count = {};
@@ -465,7 +466,7 @@ int32_t EalMan::ReadNumsChunk(
 }
 
 int32_t EalMan::ReadNamsChunk(
-        std::ifstream&              file,
+        std::istream&               file,
         uint32_t                    count,
         std::vector<std::string>&   dest,
         uint32_t&                   bytesRead
@@ -491,7 +492,7 @@ int32_t EalMan::ReadNamsChunk(
 }
 /*
 int32_t EalMan::ReadFilsChunk(
-        std::ifstream&              file,
+        std::istream&              file,
         uint32_t                    count,
         std::vector<std::string>&   dest,
         uint32_t&                   bytesRead
@@ -517,7 +518,7 @@ int32_t EalMan::ReadFilsChunk(
 */
 template <typename T>
 int32_t EalMan::ReadDataChunk(
-        std::ifstream&    file,
+        std::istream&     file,
         uint32_t          count,
         const FourCC      fourCC,
         std::vector<T>&   dest,
@@ -535,8 +536,8 @@ int32_t EalMan::ReadDataChunk(
 }
 
 int32_t EalMan::ReadGemaChunk(
-        std::ifstream&   file,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        uint32_t&       bytesRead
         )
 {
     Chunk gema{};
@@ -649,7 +650,7 @@ int32_t EalMan::GetAttributes(
 }
 
 int32_t EalMan::EalEnvironmentAttributes(
-        std::ifstream&                                          file,
+        std::istream&                                           file,
         std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
         uint32_t&                                               bytesRead
         )
@@ -672,8 +673,8 @@ int32_t EalMan::EalEnvironmentAttributes(
 }
 
 int32_t EalMan::EalObstacleAttributes(
-        std::ifstream&   file,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        uint32_t&       bytesRead
         )
 {
     uint32_t nums{};
@@ -692,8 +693,8 @@ int32_t EalMan::EalObstacleAttributes(
 }
 
 int32_t EalMan::EalSourceAttributes(
-        std::ifstream&   file,
-        uint32_t&        bytesRead
+        std::istream&   file,
+        uint32_t&       bytesRead
         )
 {
     uint32_t nums{};
@@ -716,7 +717,7 @@ int32_t EalMan::EalSourceAttributes(
 }
 
 int32_t EalMan::EalGeometryAttributes(
-        std::ifstream&                                          file,
+        std::istream&                                           file,
         std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
         uint32_t&                                               bytesRead
         )
@@ -1071,6 +1072,21 @@ int32_t EalMan::LoadDataSet(
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) { return toInt(EalError::FileNotFound); }
 
+    return ParseDataSet(file);
+}
+
+int32_t EalMan::LoadDataSetFromMemory(
+        std::istream&   file
+        )
+{
+    if (file) { return ParseDataSet(file); }
+    else { return toInt(EalError::FileNotFound); }
+}
+
+int32_t EalMan::ParseDataSet(
+        std::istream&   file
+        )
+{
     Chunk mainChunk{};
     if (mainChunk.read(file) != toInt(EalError::OK)
         || !mainChunk.Equals(FourCC::RIFF)

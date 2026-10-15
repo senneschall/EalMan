@@ -2,7 +2,7 @@
 #include "Chunk.h"
 
 int32_t Chunk::read(
-        std::ifstream&   file
+        std::istream&   file
         )
 {
     std::array<char, 8> header{};
