@@ -1457,7 +1457,6 @@ namespace GetListenerDynamicAttributes
 #pragma region GetSourceDynamicAttributes
 namespace GetSourceDynamicAttributes
 {
-/*
     namespace OriginalEALFiles
     {
         TEST_P(ListSrcIDs, GetSourceDynamicAttributes_ValidFile)
@@ -1489,7 +1488,6 @@ namespace GetSourceDynamicAttributes
             }
         }
     }
-*/
 
     namespace FailingGetSourceDynamicAttributesRequests
     {
