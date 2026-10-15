@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -149,6 +150,22 @@ static void normalize(
         v.fY /= len;
         v.fZ /= len;
     }
+}
+
+static bool compareStringCaseInvariant(
+    const std::string& left,
+    const std::string& right
+)
+{
+    if (left.size() != right.size()) { return false; }
+
+    return std::equal(
+            left.begin(),
+            left.end(),
+            right.begin(),
+            [](char a, char b) {
+                return std::tolower(static_cast<unsigned char>(a)) == std::tolower(static_cast<unsigned char>(b));
+            });
 }
 
 int32_t EalMan::getIndexIDfromBSP(
@@ -597,7 +614,15 @@ int32_t EalMan::GetID(
     id = {};
     if (!dataset.empty())
     {
+#ifdef CASESENSITIVE
         auto cnt = std::find(dataset.begin(), dataset.end(), name);
+#else
+        auto cnt = std::find_if(
+                dataset.begin(),
+                dataset.end(),
+                [&name](const std::string& s) { return compareStringCaseInvariant(s, name); }
+            );
+#endif
         if (cnt != dataset.end())
         {
             id = static_cast<int32_t>(cnt - dataset.begin());

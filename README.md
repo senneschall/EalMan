@@ -71,6 +71,10 @@ No further dependencies were introduced, by design.
 **EalMan** does keep its API compatible to *EaxMan.dll* *v2.0.1.1* by default.
 It you need compatibility with *EaxMan.dll* *v3.0.0.0*, compile **EalMan** with the parameter `EAXMANVERSION=3`.
 
+*EaxMan.dll* does perform case-insensitive searches for all field names.
+**EalMan** copies that behavior, so `"Small Room"` will also find a field called `"small room"`.
+If you need case-sensitive search, compile **EalMan** with the parameter `CASESENSITIVE=1`.
+
 ## Testing
 
 **EalMan** was thoroughly tested against the *EaxMan.dll* included in *Creative's EAX patches* for *Unreal Tournament*.

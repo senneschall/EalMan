@@ -363,7 +363,17 @@ TestParameter dmgrinder{
     SourceAttributes{EAXBufferProperties{0, 0, 0, 0, 0.0f, 0, 0.0f, 0, 0.0f, 0.0f, 0, 0.0f, 0}, 0, 0, 0, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0, 0},
     MaterialAttributes{0, 0.0f, 0.0f, 0},
     8,
-    {EAXListenerProperties{-137, -2192, 0.0f, 2.7f, 0.79f, -1214, 0.013f, 395, 0.02f, 13, 13.5f, 1.0f, -5.0f, 63}, EAXListenerProperties{-685, -1507, 0.0f, 1.19f, 0.59f, 1000, 0.007f, 521, 0.011f, 12, 19.986f, 0.301f, -5.0f, 32}, EAXListenerProperties{-137, -698, 0.0f, 2.826f, 0.33f, -205, 0.02f, 16, 0.03f, 9, 36.200001f, 0.63f, -5.0f, 63}, EAXListenerProperties{0, -4384, 0.0f, 2.7f, 0.79f, 1000, 0.013f, 27, 0.02f, 13, 13.5f, 1.0f, -5.0f, 63}, EAXListenerProperties{-959, -4658, 0.0f, 4.462f, 0.23f, -2003, 0.022506f, 94, 0.033759f, 10, 56.603001f, 1.0f, -5.0f, 159}, EAXListenerProperties{-411, -698, 0.0f, 1.285f, 0.33f, -2616, 0.00355f, 356, 0.005325f, 9, 6.425f, 1.0f, -5.0f, 159}, EAXListenerProperties{-411, -1370, 0.0f, 1.49f, 0.86f, 1000, 0.021f, -466, 0.011f, 14, 7.5f, 0.3f, -5.0f, 63}, EAXListenerProperties{-1370, -698, 0.0f, 3.916f, 0.33f, -1166, 0.02f, 685, 0.03f, 9, 36.200001f, 1.0f, -5.0f, 63}},
+    {
+        EAXListenerProperties{-137, -2192, 0.0f, 2.7f, 0.79f, -1214, 0.013f, 395, 0.02f, 13, 13.5f, 1.0f, -5.0f, 63},
+        EAXListenerProperties{-685, -1507, 0.0f, 1.19f, 0.59f, 1000, 0.007f, 521, 0.011f, 12, 19.986f, 0.301f, -5.0f, 32},
+        EAXListenerProperties{-137, -698, 0.0f, 2.826f, 0.33f, -205, 0.02f, 16, 0.03f, 9, 36.200001f, 0.63f, -5.0f, 63},
+        EAXListenerProperties{0, -4384, 0.0f, 2.7f, 0.79f, 1000, 0.013f, 27, 0.02f, 13, 13.5f, 1.0f, -5.0f, 63},
+        EAXListenerProperties{-959, -4658, 0.0f, 4.462f, 0.23f, -2003, 0.022506f, 94, 0.033759f, 10, 56.603001f, 1.0f, -5.0f, 159},
+        //EAXListenerProperties{-411, -698, 0.0f, 1.285f, 0.33f, -2616, 0.00355f, 356, 0.005325f, 9, 6.425f, 1.0f, -5.0f, 159}, // case sensitive
+        EAXListenerProperties{ 0, -4384, 0.0f, 2.7f, 0.79f, 1000, 0.013f, 27, 0.02f, 13, 13.5f, 1.0f, -5.0f, 63 }, // case insensitive
+        EAXListenerProperties{-411, -1370, 0.0f, 1.49f, 0.86f, 1000, 0.021f, -466, 0.011f, 14, 7.5f, 0.3f, -5.0f, 63},
+        EAXListenerProperties{-1370, -698, 0.0f, 3.916f, 0.33f, -1166, 0.02f, 685, 0.03f, 9, 36.200001f, 1.0f, -5.0f, 63}
+    },
     {"Med Verb", "Tight Verb", "Med Verb, Lo Relf", "Small verb", "Jail Cell", "Small Verb", "Hi Refl", "Big Verb"},
     1,
     {SourceAttributes{EAXBufferProperties{0, 0, 0, 0, 0.0f, 0, 0.0f, 0, 0.25f, 0.5f, 0, 1.0f, 7}, 360, 360, 0, 0.0f, 0.0f, -1.0f, 1.0f, 1000000.0f, 1, 0}},
