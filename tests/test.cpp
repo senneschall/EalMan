@@ -4,7 +4,7 @@
 #include "../src/EalMan.h"
 #include "EalFileContents.h"
 #include "EalFileLstPos.h"
-//#include "EalFileSrcPos.h"
+#include "EalFileSrcPos.h"
 
 #pragma region LoadDataSet
 namespace LoadDataSet
@@ -870,7 +870,7 @@ namespace GetEnvironmentID
             {
                 for (uint32_t i = 0; i < par.nrEnvs; i++)
                 {
-                    if (par.filename == "DM-Grinder.eal" && i == 5) continue; // skipt DM-Grinder case variant test
+                    if (par.filename == "DM-Grinder.eal" && i == 5) continue; // skips DM-Grinder case variant test
                     ASSERT_EQ(par.nrEnvs, par.envNames.size());
                     int32_t envID{};
                     int32_t resGEI = man.GetEnvironmentID(par.envNames[i], envID);
@@ -1243,7 +1243,7 @@ namespace GetGeometrySetID
             int32_t resLoad = man.LoadDataSet(par.filename, 0);
             ASSERT_EQ(resLoad, toInt(EalError::OK));
             int32_t geoID{};
-            int32_t resGGS = man.GetGeometrySetID("Geometry1", geoID); // not alle .eal files have "Geometry1"
+            int32_t resGGS = man.GetGeometrySetID("Geometry1", geoID); // not all .eal files have "Geometry1"
             EXPECT_EQ(resGGS, toInt(EalError::OK));
             EXPECT_EQ(geoID, 0);
         }
