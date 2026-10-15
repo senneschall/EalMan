@@ -2,7 +2,6 @@
 #include <array>
 #include <cmath>
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -989,15 +988,15 @@ bool EalMan::isGEMAdataPlausible() const
 }
 
 EalMan::EalMan()
-    : m_data(std::make_unique<EalData>())
+    : m_data(std::unique_ptr<EalData>(new EalData()))
 {
 }
 
 EalMan::~EalMan() = default;
 
 int32_t EalMan::GetDataSetSize(
-        uint32_t&                         sizeDataSet,
-        [[maybe_unused]] const uint32_t   flags
+        uint32_t&        sizeDataSet,
+        const uint32_t   /* flags */
         ) const
 {
     size_t memsize = sizeof(EalData);
@@ -1033,20 +1032,17 @@ int32_t EalMan::GetDataSetSize(
     memsize += m_data->gemaBSPouterNodes.capacity() * sizeof(Zone);
     memsize += m_data->gemaDiffBox.capacity() * sizeof(DiffractionBox);
 
-    if (memsize > std::numeric_limits<uint32_t>::max()) { sizeDataSet = 0; } // eal file larger than 4GB
+    if (memsize > UINT32_MAX) { sizeDataSet = 0; } // eal file larger than 4GB
     else { sizeDataSet = static_cast<uint32_t>(memsize); }
 
     return toInt(EalError::OK);
 }
 
 int32_t EalMan::LoadDataSet(
-        const std::string&                filename,
-        [[maybe_unused]] const uint32_t   flags
+        const std::string&   filename,
+        const uint32_t       /* flags */
         )
 {
-    std::filesystem::path filePath{filename};
-    if (!std::filesystem::exists(filePath)) { return toInt(EalError::FileNotFound); }
-
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) { return toInt(EalError::FileNotFound); }
 
@@ -1117,10 +1113,10 @@ int32_t EalMan::LoadDataSet(
 }
 
 int32_t EalMan::FreeDataSet(
-        [[maybe_unused]] const uint32_t   flags
+        const uint32_t   /* flags */
         )
 {
-    m_data = std::make_unique<EalData>();
+    m_data = std::unique_ptr<EalData>(new EalData());
     return toInt(EalError::OK);
 }
 
@@ -1550,7 +1546,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
 int32_t EalMan::GetEnvironmentName(
         const int32_t    envID,
         std::string&     envName,
-        [[maybe_unused]] const uint32_t   maxNameSize
+        const uint32_t   /* maxNameSize */
         ) const
 {
     if (envID < 0 || static_cast<uint32_t>(envID) >= m_data->nrEnvironments) { return toInt(EalError::InvalidId); }

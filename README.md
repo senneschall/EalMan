@@ -63,7 +63,7 @@ ealMan->GetSourceDynamicAttributes(0, posSource, srcObstruction, srcObstructionL
 
 ## How to build
 
-Compile with any C++17 compatible compiler.
+Compile with any C++11 compatible compiler.
 No further dependencies were introduced, by design.
 
 ### Compilation options
