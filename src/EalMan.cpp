@@ -1069,6 +1069,8 @@ int32_t EalMan::LoadDataSet(
         const uint32_t       /* flags */
         )
 {
+    FreeDataSet(0);
+
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) { return toInt(EalError::FileNotFound); }
 
@@ -1158,6 +1160,9 @@ int32_t EalMan::FreeDataSet(
         )
 {
     m_data = std::unique_ptr<EalData>(new EalData());
+    m_listenerPosition = {};
+    m_listenerEnvIDIndex= {};
+
     return toInt(EalError::OK);
 }
 

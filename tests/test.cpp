@@ -17,6 +17,15 @@ namespace LoadDataSet
             int32_t result = man.LoadDataSet(par.filename, 0);
             EXPECT_EQ(result, toInt(EalError::OK));
         }
+
+        TEST(LoadUT99EalFiles, LoadDataSet_Again)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("CTF-Face.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            resLoad = man.LoadDataSet("DM-Morpheus.eal", 0);
+            EXPECT_EQ(resLoad, toInt(EalError::OK));
+        }
     }
 
     namespace FailingEALFiles
