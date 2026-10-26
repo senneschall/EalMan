@@ -1081,6 +1081,8 @@ int32_t EalMan::LoadDataSetFromMemory(
         std::istream&   file
         )
 {
+    FreeDataSet(0);
+
     if (file) { return ParseDataSet(file); }
     else { return toInt(EalError::FileNotFound); }
 }
