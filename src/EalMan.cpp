@@ -303,6 +303,28 @@ int32_t EalMan::computeDiffraction(
     return m_data->gdfm.MaxAttenuation;
 }
 
+size_t estimateFileSize(
+        std::istream&   file
+        )
+{
+    std::streampos orgPos = file.tellg();
+
+    file.seekg(0, std::ios::end);
+    std::streampos endPos = file.tellg();
+
+    file.seekg(orgPos);
+
+    size_t size{};
+    if (endPos >= orgPos)
+    { size = static_cast<size_t>(endPos - orgPos); }
+    /*
+     * the size is exact if istream is a ifstream (opened as binary) or a istringstream
+     * it can be slighty higher than the actual file size if opened in textmode (\r\n are counted but only \n is used)
+     */
+
+    return size;
+}
+
 template<typename T>
 int32_t readStruct(
         std::istream&   file,
@@ -353,8 +375,12 @@ int32_t EalMan::ReadArrayData(
         uint32_t&         bytesRead
         )
 {
+    if (bytesRead >= m_fileSize) { return toInt(EalError::FileInvalid); }
+    size_t maxRemain = (m_fileSize - static_cast<size_t>(bytesRead)) / sizeof(T);
+    if (count > static_cast<uint32_t>(maxRemain)) { return toInt(EalError::FileInvalid); }
+
     dest.resize(count);
-    if (!file.read(reinterpret_cast<char*>(dest.data()), dest.size() * sizeof(T))) { return toInt(EalError::VersionInvalid); }
+    if (!file.read(reinterpret_cast<char*>(dest.data()), dest.size() * sizeof(T))) { return toInt(EalError::FileInvalid); }
     bytesRead += static_cast<uint32_t>(dest.size()) * sizeof(T);
     return toInt(EalError::OK);
 }
@@ -573,6 +599,9 @@ int32_t EalMan::ReadGemaChunk(
     if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP inner tree
     if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP outer tree
 
+    if (startID >= nrPlanes) // out-of-bounds check
+    { startID = 0; }
+
     m_data->gemaNrSrcIDs = nrSrcs;
     m_data->gemaNrEnvIDs = nrEnvs;
     m_data->gemaStartID = startID;
@@ -592,17 +621,17 @@ int32_t EalMan::ReadGemaChunk(
      *
     if (  (1 + nrSrcs      * 4 ) * 4  // each sources struct has 4 members (one index, 3 coordinates); plus nrSrcs; each 4 bytes
         + (1 + nrEnvs      * 1 ) * 4  // each environment struct has 1 member; plus nrEnvs; each 4 bytes
-        + (1 + nrUnknown   * 1 ) * 4  // unknown number 4 bytes
+        + (1 + startID     * 1 ) * 4  // BSP start index 4 bytes
         + (0 + nrEnvs      * 1 ) * 4  // diffraction matrix consists of 4 bytes indizes
         + (0 + nrEnvObsIdx * 1 ) * 4  // environment matrix consists of 4 bytes indizes
-        + (1 + nrPlanes    * 11) * 4  // each NodeA struct has 11 members; plus nrNodeA; each 4 bytes
-        + (1 + nrLeaves    * 2 ) * 4  // each NodeB struct has 2 members; plus nrNodeB; each 4 bytes
-        + (1 + nrDiffBox   * 7 ) * 4  // each Unknown struct has 7 members; plus nrUnkown; each 4 bytes
-        != gema.length)             // should be the total gema chunk data size
+        + (1 + nrPlanes    * 11) * 4  // each SplitNode struct has 11 members; plus nrPlanes; each 4 bytes
+        + (1 + nrLeaves    * 2 ) * 4  // each Zone struct has 2 members; plus nrLeaves; each 4 bytes
+        + (1 + nrDiffBox   * 7 ) * 4  // each DiffractionBox struct has 7 members; plus nrDiffBox; each 4 bytes
+        != gema.length)               // should be the total gema chunk data size
     { return toInt(EalError::FileInvalid); }
      */
 
-    if (isGEMAdataPlausible()) { toInt(EalError::FileInvalid); }
+    if (!isGEMAdataPlausible()) { return toInt(EalError::FileInvalid); }
     return toInt(EalError::OK);
 }
 
@@ -945,8 +974,8 @@ bool EalMan::isGEMAdataPlausible() const
     for (const int32_t& id : m_data->gemaEnvIDs)
     {
         plausible = plausible
-                && (id >= static_cast<int32_t>(EMFLAG_IDDEFAULT))
-                && (static_cast<uint32_t>(id) < m_data->nrEnvironments)
+                && (id >= static_cast<int32_t>(EMFLAG_IDNONE))
+                && (id < static_cast<int32_t>(m_data->nrEnvironments))
                 ;
     }
 
@@ -954,7 +983,7 @@ bool EalMan::isGEMAdataPlausible() const
     for (const int32_t& id : m_data->gemaSrcIDs)
     {
         plausible = plausible
-                && (id >= static_cast<int32_t>(EMFLAG_IDDEFAULT))
+                && (id >= static_cast<int32_t>(EMFLAG_IDNONE))
                 && (static_cast<uint32_t>(id) < m_data->nrSources)
                 ;
     }
@@ -1083,7 +1112,11 @@ int32_t EalMan::LoadDataSetFromMemory(
 {
     FreeDataSet(0);
 
-    if (file) { return ParseDataSet(file); }
+    if (file)
+    {
+        if (file.good()) { return ParseDataSet(file); }
+        else { return toInt(EalError::FileInvalid); }
+    }
     else { return toInt(EalError::FileNotFound); }
 }
 
@@ -1091,6 +1124,8 @@ int32_t EalMan::ParseDataSet(
         std::istream&   file
         )
 {
+    m_fileSize = estimateFileSize(file);
+
     Chunk mainChunk{};
     if (mainChunk.read(file) != toInt(EalError::OK)
         || !mainChunk.Equals(FourCC::RIFF)
@@ -1164,6 +1199,7 @@ int32_t EalMan::FreeDataSet(
     m_data = std::unique_ptr<EalData>(new EalData());
     m_listenerPosition = {};
     m_listenerEnvIDIndex= {};
+    m_fileSize = {};
 
     return toInt(EalError::OK);
 }

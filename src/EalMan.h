@@ -16,6 +16,9 @@ private:
     /* buffered environment the listener position is in */
     int32_t                    m_listenerEnvIDIndex{};
 
+    /* file size in bytes */
+    size_t   m_fileSize{};
+
     int32_t getIndexIDfromBSP(
         int32_t&        idx,
         const EMPoint   pos
@@ -31,7 +34,7 @@ private:
         ) const;
 
     template <typename T>
-    static int32_t ReadArrayData(
+    int32_t ReadArrayData(
             std::istream&     file,
             uint32_t          count,
             std::vector<T>&   dest,

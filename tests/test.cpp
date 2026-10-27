@@ -120,6 +120,27 @@ namespace LoadDataSet
             int32_t result = man.LoadDataSet("GemaChunkTreeSizeTooBig.eal", 0);
             EXPECT_EQ(result, toInt(EalError::FileInvalid));
         }
+
+        TEST(FailingEalFiles, LoadDataSet_BSPstartIndexOutOfBound)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("BSPstartingIndexOOB.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::OK));
+        }
+
+        TEST(FailingEalFiles, LoadDataSet_BSPnodeIndexOutOfBound)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("BSPnodeOOB.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
+
+        TEST(FailingEalFiles, LoadDataSet_BSPleafIndexOutOfBound)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("BSPleafOOB.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
     }
 }
 #pragma endregion
