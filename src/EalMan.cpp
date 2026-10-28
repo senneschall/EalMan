@@ -303,7 +303,7 @@ int32_t EalMan::computeDiffraction(
     return m_data->gdfm.MaxAttenuation;
 }
 
-size_t estimateFileSize(
+static size_t estimateFileSize(
         std::istream&   file
         )
 {
@@ -326,7 +326,7 @@ size_t estimateFileSize(
 }
 
 template<typename T>
-int32_t readStruct(
+static int32_t readStruct(
         std::istream&   file,
         T&              target,
         uint32_t&       bytesRead
@@ -984,7 +984,7 @@ bool EalMan::isGEMAdataPlausible() const
     {
         plausible = plausible
                 && (id >= static_cast<int32_t>(EMFLAG_IDNONE))
-                && (static_cast<uint32_t>(id) < m_data->nrSources)
+                && (id < static_cast<int32_t>(m_data->nrSources))
                 ;
     }
 
