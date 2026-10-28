@@ -12,8 +12,8 @@
 #include "EalMan.h"
 
 inline static uint32_t to_u32_le(
-        const std::array<char, 4>&   a
-        )
+    const std::array<char, 4>&   a
+    )
 {
     return (uint32_t(static_cast<uint8_t>(a[0]))       ) |
            (uint32_t(static_cast<uint8_t>(a[1])) <<  8 ) |
@@ -22,12 +22,12 @@ inline static uint32_t to_u32_le(
 }
 
 inline static float scalarProduct(
-    float aX,
-    float aY,
-    float aZ,
-    float bX,
-    float bY,
-    float bZ
+    float   aX,
+    float   aY,
+    float   aZ,
+    float   bX,
+    float   bY,
+    float   bZ
     )
 {
     return (aX * bX + aY * bY + aZ * bZ);
@@ -91,7 +91,7 @@ static bool isIntersectInsideDiffbox(
     const uint32_t   boxSide,
     const EMPoint&   dbMin,
     const EMPoint&   dbMax
-)
+    )
 {
     switch (boxSide)
     {
@@ -141,7 +141,7 @@ static bool isIntersectInsideDiffbox(
 
 static void normalize(
     EMPoint&   v
-)
+    )
 {
     float len = sqrtf(scalarProduct(v.fX, v.fY, v.fZ, v.fX, v.fY, v.fZ));
 
@@ -156,7 +156,7 @@ static void normalize(
 static bool compareStringCaseInvariant(
     const std::string&   left,
     const std::string&   right
-)
+    )
 {
     if (left.size() != right.size()) { return false; }
 
@@ -172,7 +172,7 @@ static bool compareStringCaseInvariant(
 int32_t EalMan::getIndexIDfromBSP(
     int32_t&        idx,
     const EMPoint   pos
-) const
+    ) const
 {
     SplitNode node{};
     uint32_t child = m_data->gemaStartID;
@@ -202,7 +202,7 @@ int32_t EalMan::computeDiffraction(
     const uint32_t   boxSide,
     const EMPoint&   boxMin,
     const EMPoint&   boxMax
-) const
+    ) const
 {
     EMPoint edgePoint = intersection;
 
@@ -304,8 +304,8 @@ int32_t EalMan::computeDiffraction(
 }
 
 static size_t estimateFileSize(
-        std::istream&   file
-        )
+    std::istream&   file
+    )
 {
     std::streampos orgPos = file.tellg();
 
@@ -327,10 +327,10 @@ static size_t estimateFileSize(
 
 template<typename T>
 static int32_t readStruct(
-        std::istream&   file,
-        T&              target,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    T&              target,
+    uint32_t&       bytesRead
+    )
 {
     std::array<char, sizeof(T)> raw{};
     if (!file.read(raw.data(), raw.size())) { return toInt(EalError::FileInvalid); }
@@ -341,10 +341,10 @@ static int32_t readStruct(
 }
 
 static int32_t readNumber(
-        std::istream&   file,
-        uint32_t&       number,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    uint32_t&       number,
+    uint32_t&       bytesRead
+    )
 {
     std::array<char, 4> bytes{};
     if (!file.read(bytes.data(), bytes.size())) { return toInt(EalError::FileInvalid); }
@@ -357,10 +357,10 @@ static int32_t readNumber(
 }
 
 static int32_t readVer(
-        std::istream&    file,
-        const uint32_t   version,
-        uint32_t&        bytesRead
-        )
+    std::istream&    file,
+    const uint32_t   version,
+    uint32_t&        bytesRead
+    )
 {
     uint32_t ver{};
     if (readNumber(file, ver, bytesRead) != toInt(EalError::OK) || ver != version) { return toInt(EalError::VersionInvalid); }
@@ -369,11 +369,11 @@ static int32_t readVer(
 
 template <typename T>
 int32_t EalMan::ReadArrayData(
-        std::istream&     file,
-        uint32_t          count,
-        std::vector<T>&   dest,
-        uint32_t&         bytesRead
-        )
+    std::istream&     file,
+    uint32_t          count,
+    std::vector<T>&   dest,
+    uint32_t&         bytesRead
+    )
 {
     if (bytesRead >= m_fileSize) { return toInt(EalError::FileInvalid); }
     size_t maxRemain = (m_fileSize - static_cast<size_t>(bytesRead)) / sizeof(T);
@@ -389,7 +389,7 @@ static int32_t readString(
     std::istream& file,
     std::array<char, 260>& text,
     uint32_t& bytesRead
-)
+    )
 {
     if (!file.read(text.data(), text.size())) { return toInt(EalError::FileInvalid); }
     else
@@ -400,10 +400,10 @@ static int32_t readString(
 }
 */
 int32_t EalMan::EalGlobals(
-        std::istream&   file,
-        const FourCC    fourcc,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    const FourCC    fourcc,
+    uint32_t&       bytesRead
+    )
 {
     switch (fourcc) {
         case FourCC::MAJV:
@@ -449,10 +449,10 @@ int32_t EalMan::EalGlobals(
 }
 
 int32_t EalMan::EalList(
-        std::istream&                                           file,
-        std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
-        uint32_t&                                               bytesRead
-        )
+    std::istream&                                           file,
+    std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+    uint32_t&                                               bytesRead
+    )
 {
     std::array<char, 4> fourCC{};
     if (!file.read(fourCC.data(), fourCC.size())) { return toInt(EalError::VersionInvalid); }
@@ -471,10 +471,10 @@ int32_t EalMan::EalList(
 }
 
 int32_t EalMan::ReadNumsChunk(
-        std::istream&   file,
-        uint32_t&       count,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    uint32_t&       count,
+    uint32_t&       bytesRead
+    )
 {
     count = {};
     Chunk num{};
@@ -492,11 +492,11 @@ int32_t EalMan::ReadNumsChunk(
 }
 
 int32_t EalMan::ReadNamsChunk(
-        std::istream&               file,
-        uint32_t                    count,
-        std::vector<std::string>&   dest,
-        uint32_t&                   bytesRead
-        )
+    std::istream&               file,
+    uint32_t                    count,
+    std::vector<std::string>&   dest,
+    uint32_t&                   bytesRead
+    )
 {
     Chunk nams{};
     if (nams.read(file) == toInt(EalError::OK))
@@ -518,11 +518,11 @@ int32_t EalMan::ReadNamsChunk(
 }
 /*
 int32_t EalMan::ReadFilsChunk(
-        std::istream&              file,
-        uint32_t                    count,
-        std::vector<std::string>&   dest,
-        uint32_t&                   bytesRead
-        )
+    std::istream&              file,
+    uint32_t                    count,
+    std::vector<std::string>&   dest,
+    uint32_t&                   bytesRead
+    )
 {
     Chunk fils{};
     if (fils.read(file) == toInt(EalError::OK))
@@ -544,12 +544,12 @@ int32_t EalMan::ReadFilsChunk(
 */
 template <typename T>
 int32_t EalMan::ReadDataChunk(
-        std::istream&     file,
-        uint32_t          count,
-        const FourCC      fourCC,
-        std::vector<T>&   dest,
-        uint32_t&         bytesRead
-        )
+    std::istream&     file,
+    uint32_t          count,
+    const FourCC      fourCC,
+    std::vector<T>&   dest,
+    uint32_t&         bytesRead
+    )
 {
     Chunk data{};
     if (data.read(file) == toInt(EalError::OK))
@@ -562,9 +562,9 @@ int32_t EalMan::ReadDataChunk(
 }
 
 int32_t EalMan::ReadGemaChunk(
-        std::istream&   file,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    uint32_t&       bytesRead
+    )
 {
     Chunk gema{};
     if (gema.read(file) == toInt(EalError::OK))
@@ -636,10 +636,10 @@ int32_t EalMan::ReadGemaChunk(
 }
 
 int32_t EalMan::GetID(
-        const std::string&          name,
-        int32_t&                    id,
-        std::vector<std::string>&   dataset
-        ) const
+    const std::string&          name,
+    int32_t&                    id,
+    std::vector<std::string>&   dataset
+    ) const
 {
     id = {};
     if (!dataset.empty())
@@ -664,11 +664,11 @@ int32_t EalMan::GetID(
 
 template <typename T>
 int32_t EalMan::GetAttributes(
-        const int32_t     id,
-        const int32_t     length,
-        T&                attributes,
-        std::vector<T>&   dataset
-        ) const
+    const int32_t     id,
+    const int32_t     length,
+    T&                attributes,
+    std::vector<T>&   dataset
+    ) const
 {
     attributes = {};
     if (id < 0 || id >= length) { return toInt(EalError::InvalidId); }
@@ -679,10 +679,10 @@ int32_t EalMan::GetAttributes(
 }
 
 int32_t EalMan::EalEnvironmentAttributes(
-        std::istream&                                           file,
-        std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
-        uint32_t&                                               bytesRead
-        )
+    std::istream&                                           file,
+    std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+    uint32_t&                                               bytesRead
+    )
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
@@ -702,9 +702,9 @@ int32_t EalMan::EalEnvironmentAttributes(
 }
 
 int32_t EalMan::EalObstacleAttributes(
-        std::istream&   file,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    uint32_t&       bytesRead
+    )
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
@@ -722,9 +722,9 @@ int32_t EalMan::EalObstacleAttributes(
 }
 
 int32_t EalMan::EalSourceAttributes(
-        std::istream&   file,
-        uint32_t&       bytesRead
-        )
+    std::istream&   file,
+    uint32_t&       bytesRead
+    )
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
@@ -746,10 +746,10 @@ int32_t EalMan::EalSourceAttributes(
 }
 
 int32_t EalMan::EalGeometryAttributes(
-        std::istream&                                           file,
-        std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
-        uint32_t&                                               bytesRead
-        )
+    std::istream&                                           file,
+    std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+    uint32_t&                                               bytesRead
+    )
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
@@ -1016,9 +1016,9 @@ bool EalMan::isGEMAdataPlausible() const
                 && std::isfinite(node.base.fX)
                 && std::isfinite(node.base.fY)
                 && std::isfinite(node.base.fZ)
-                && std::isfinite(node.base.fX)
-                && std::isfinite(node.base.fY)
-                && std::isfinite(node.base.fZ)
+                && std::isfinite(node.normal.fX)
+                && std::isfinite(node.normal.fY)
+                && std::isfinite(node.normal.fZ)
                 && ((node.childFront & 0x80000000)
                         ? (((node.childFront & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
                         : (node.childFront < m_data->gemaNrInnerNodes)
@@ -1050,9 +1050,9 @@ EalMan::EalMan()
 EalMan::~EalMan() = default;
 
 int32_t EalMan::GetDataSetSize(
-        uint32_t&        sizeDataSet,
-        const uint32_t   /* flags */
-        ) const
+    uint32_t&        sizeDataSet,
+    const uint32_t   /* flags */
+    ) const
 {
     size_t memsize = sizeof(EalData);
 
@@ -1082,7 +1082,7 @@ int32_t EalMan::GetDataSetSize(
     memsize += m_data->gemaSrcIDs.capacity() * sizeof(int32_t);
     memsize += m_data->gemaSources.capacity() * sizeof(EMPoint);
     memsize += m_data->gemaDiffraction.capacity() * sizeof(int32_t);
-    memsize += m_data->gemaEnvironmentMatrix.capacity() * m_data->gemaEnvironmentMatrix.capacity() * sizeof(int32_t);
+    memsize += m_data->gemaEnvironmentMatrix.capacity() * sizeof(int32_t);
     memsize += m_data->gemaBSPinnerNodes.capacity() * sizeof(SplitNode);
     memsize += m_data->gemaBSPouterNodes.capacity() * sizeof(Zone);
     memsize += m_data->gemaDiffBox.capacity() * sizeof(DiffractionBox);
@@ -1094,9 +1094,9 @@ int32_t EalMan::GetDataSetSize(
 }
 
 int32_t EalMan::LoadDataSet(
-        const std::string&   filename,
-        const uint32_t       /* flags */
-        )
+    const std::string&   filename,
+    const uint32_t       /* flags */
+    )
 {
     FreeDataSet(0);
 
@@ -1107,8 +1107,8 @@ int32_t EalMan::LoadDataSet(
 }
 
 int32_t EalMan::LoadDataSetFromMemory(
-        std::istream&   file
-        )
+    std::istream&   file
+    )
 {
     FreeDataSet(0);
 
@@ -1121,8 +1121,8 @@ int32_t EalMan::LoadDataSetFromMemory(
 }
 
 int32_t EalMan::ParseDataSet(
-        std::istream&   file
-        )
+    std::istream&   file
+    )
 {
     m_fileSize = estimateFileSize(file);
 
@@ -1193,8 +1193,8 @@ int32_t EalMan::ParseDataSet(
 }
 
 int32_t EalMan::FreeDataSet(
-        const uint32_t   /* flags */
-        )
+    const uint32_t   /* flags */
+    )
 {
     m_data = std::unique_ptr<EalData>(new EalData());
     m_listenerPosition = {};
@@ -1205,17 +1205,17 @@ int32_t EalMan::FreeDataSet(
 }
 
 int32_t EalMan::GetListenerAttributes(
-        ListenerAttributes&   lstAttributes
-        ) const
+    ListenerAttributes&   lstAttributes
+    ) const
 {
     lstAttributes = m_data->defListener;
     return toInt(EalError::OK);
 }
 
 int32_t EalMan::GetSourceID(
-        const std::string&   srcName,
-        int32_t&             srcID
-        ) const
+    const std::string&   srcName,
+    int32_t&             srcID
+    ) const
 {
     srcID = {};
     if (srcName.size() < 1) { return toInt(EalError::IdNotFound); }
@@ -1223,9 +1223,9 @@ int32_t EalMan::GetSourceID(
 }
 
 int32_t EalMan::GetSourceAttributes(
-        const int32_t       srcID,
-        SourceAttributes&   srcAttributes
-        ) const
+    const int32_t       srcID,
+    SourceAttributes&   srcAttributes
+    ) const
 {
     if (srcID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
@@ -1236,9 +1236,9 @@ int32_t EalMan::GetSourceAttributes(
 }
 
 int32_t EalMan::GetSourceNumInstances(
-        const int32_t   srcID,
-        int32_t&        srcInstances
-        ) const
+    const int32_t   srcID,
+    int32_t&        srcInstances
+    ) const
 {
     srcInstances = {};
     if (srcID < 0 || static_cast<uint32_t>(srcID) >= m_data->nrSources) { return toInt(EalError::InvalidId); }
@@ -1249,10 +1249,10 @@ int32_t EalMan::GetSourceNumInstances(
 }
 
 int32_t EalMan::GetSourceInstancePos(
-        const int32_t   srcID,
-        const int32_t   srcInstance,
-        EMPoint&        posInstance
-        ) const
+    const int32_t   srcID,
+    const int32_t   srcInstance,
+    EMPoint&        posInstance
+    ) const
 {
     posInstance = {};
     int32_t srcInst{};
@@ -1276,17 +1276,17 @@ int32_t EalMan::GetSourceInstancePos(
 }
 
 int32_t EalMan::GetEnvironmentID(
-        const std::string&   envName,
-        int32_t&             envID
-        ) const
+    const std::string&   envName,
+    int32_t&             envID
+    ) const
 {
     return GetID(envName, envID, m_data->envNames);
 }
 
 int32_t EalMan::GetEnvironmentAttributes(
-        const int32_t            envID,
-        EAXListenerProperties&   envAttributes
-        ) const
+    const int32_t            envID,
+    EAXListenerProperties&   envAttributes
+    ) const
 {
     if (envID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
@@ -1297,17 +1297,17 @@ int32_t EalMan::GetEnvironmentAttributes(
 }
 
 int32_t EalMan::GetMaterialID(
-        const std::string&   matName,
-        int32_t&             matID
-        ) const
+    const std::string&   matName,
+    int32_t&             matID
+    ) const
 {
     return GetID(matName, matID, m_data->obsNames);
 }
 
 int32_t EalMan::GetMaterialAttributes(
-        const int32_t         matID,
-        MaterialAttributes&   matAttributes
-        ) const
+    const int32_t         matID,
+    MaterialAttributes&   matAttributes
+    ) const
 {
     if (matID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
@@ -1318,19 +1318,19 @@ int32_t EalMan::GetMaterialAttributes(
 }
 
 int32_t EalMan::GetGeometrySetID(
-        const std::string&   geomName,
-        int32_t&             geomID
-        ) const
+    const std::string&   geomName,
+    int32_t&             geomID
+    ) const
 {
     return GetID(geomName, geomID, m_data->geoNames);
 }
 
 int32_t EalMan::GetListenerDynamicAttributes(
-        const int32_t    geomID,
-        const EMPoint&   lstPos,
-        int32_t&         envID,
-        const uint32_t   flags
-        )
+    const int32_t    geomID,
+    const EMPoint&   lstPos,
+    int32_t&         envID,
+    const uint32_t   flags
+    )
 {
     envID = {};
     //int32_t length = (int32_t)m_data->geoNames.size();
@@ -1340,9 +1340,9 @@ int32_t EalMan::GetListenerDynamicAttributes(
             || m_data->gemaNrOuterNodes == 0)
     { return toInt(EalError::IdNotFound); }
 
-    if (lstPos.fX < -32768.0 || lstPos.fX > +32768.0
-            || lstPos.fY < -32768.0 || lstPos.fY > +32768.0
-            || lstPos.fZ < -32768.0 || lstPos.fZ > +32768.0)
+    if (lstPos.fX < -32768.0f || lstPos.fX > +32768.0f
+            || lstPos.fY < -32768.0f || lstPos.fY > +32768.0f
+            || lstPos.fZ < -32768.0f || lstPos.fZ > +32768.0f)
     { return toInt(EalError::IdNotFound); }
 
     int32_t idxEnvID{};
@@ -1358,7 +1358,7 @@ int32_t EalMan::GetListenerDynamicAttributes(
         envID = static_cast<int32_t>(EMFLAG_IDDEFAULT);
     }
 
-    if (flags == EMFLAG_LOCKPOSITION)
+    if (flags & EMFLAG_LOCKPOSITION)
     {
         m_listenerPosition = lstPos;
         m_listenerEnvIDIndex = idxEnvID;
@@ -1368,16 +1368,16 @@ int32_t EalMan::GetListenerDynamicAttributes(
 }
 
 int32_t EalMan::GetSourceDynamicAttributes(
-        const int32_t    geomID,
-        const EMPoint&   srcPos,
-        int32_t&         srcObstruction,
-        float&           srcObstructionLF,
-        int32_t&         srcOcclusion,
-        float&           srcOcclusionLF,
-        float&           srcOcclusionRM,
-        EMPoint&         virtPos,
-        const uint32_t   flags
-        )
+    const int32_t    geomID,
+    const EMPoint&   srcPos,
+    int32_t&         srcObstruction,
+    float&           srcObstructionLF,
+    int32_t&         srcOcclusion,
+    float&           srcOcclusionLF,
+    float&           srcOcclusionRM,
+    EMPoint&         virtPos,
+    const uint32_t   flags
+    )
 {
     // defaults
     srcObstruction = {0};
@@ -1393,9 +1393,9 @@ int32_t EalMan::GetSourceDynamicAttributes(
             || m_data->gemaNrEnvIDs == 0)
     { return toInt(EalError::IdNotFound); }
 
-    if (srcPos.fX < -32768.0 || srcPos.fX > +32768.0
-            || srcPos.fY < -32768.0 || srcPos.fY > +32768.0
-            || srcPos.fZ < -32768.0 || srcPos.fZ > +32768.0)
+    if (srcPos.fX < -32768.0f || srcPos.fX > +32768.0f
+            || srcPos.fY < -32768.0f || srcPos.fY > +32768.0f
+            || srcPos.fZ < -32768.0f || srcPos.fZ > +32768.0f)
     { return toInt(EalError::IdNotFound); }
 
     int32_t src_EnvIDIndex = static_cast<int32_t>(EMFLAG_IDDEFAULT);
@@ -1628,10 +1628,10 @@ int32_t EalMan::GetSourceDynamicAttributes(
 
 #if EAXMANVERSION == 3
 int32_t EalMan::GetEnvironmentName(
-        const int32_t    envID,
-        std::string&     envName,
-        const uint32_t   /* maxNameSize */
-        ) const
+    const int32_t    envID,
+    std::string&     envName,
+    const uint32_t   /* maxNameSize */
+    ) const
 {
     if (envID < 0 || static_cast<uint32_t>(envID) >= m_data->nrEnvironments) { return toInt(EalError::InvalidId); }
     envName = m_data->envNames[envID];
