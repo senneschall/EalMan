@@ -256,3 +256,12 @@ struct Zone
     int32_t notUsed;
     int32_t indexEnvID;
 };
+
+enum class NodeStatus
+{
+    Untested,
+    Validating,
+    Completed
+};
+
+constexpr uint32_t LeafMask = 0x80000000u;

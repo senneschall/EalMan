@@ -136,6 +136,7 @@ private:
     bool isMATAdataPlausible() const;
     bool isSRCAdataPlausible() const;
     bool isGEMAdataPlausible() const;
+    bool hasInfiniteLoop() const;
 
 public:
     EalMan();

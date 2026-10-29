@@ -141,6 +141,34 @@ namespace LoadDataSet
             int32_t result = man.LoadDataSet("BSPleafOOB.eal", 0);
             EXPECT_EQ(result, toInt(EalError::FileInvalid));
         }
+
+        TEST(FailingEalFiles, LoadDataSet_BSPsizeIncorrect)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("IncorrectBSPsize.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
+
+        TEST(FailingEalFiles, LoadDataSet_BSPinfiniteLoop)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("CircularBSP.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
+
+        TEST(FailingEalFiles, LoadDataSet_LeafOOB)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("WrongLeafIndex.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
+
+        TEST(FailingEalFiles, LoadDataSet_EnvIndexOOB)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("WrongEnvIndex.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
     }
 }
 #pragma endregion

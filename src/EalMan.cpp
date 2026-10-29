@@ -176,7 +176,7 @@ int32_t EalMan::getIndexIDfromBSP(
 {
     SplitNode node{};
     uint32_t child = m_data->gemaStartID;
-    while (!(child & 0x80000000)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
+    while (!(child & LeafMask)) // MSB not set -> index refers to a SplitNode; we're still traversing the tree
     {
         /* if (child < m_data->gemaNrInnerNodes ) */ // boundary check done at loading
         { node = m_data->gemaBSPinnerNodes[child]; }
@@ -186,7 +186,7 @@ int32_t EalMan::getIndexIDfromBSP(
             ? node.childFront
             : node.childBack;
     }
-    child &= 0x7FFFFFFF; // MSB unset to recover the índex of a Zone
+    child &= ~LeafMask; // MSB unset to recover the índex of a Zone
     /* if (child >= m_data->gemaNrOuterNods)
     { return toInt(EalError::IdNotFound); } */
     const Zone zone = m_data->gemaBSPouterNodes[child];
@@ -599,6 +599,8 @@ int32_t EalMan::ReadGemaChunk(
     if (!(nrPlanes > 0 && ReadArrayData(file, nrPlanes, m_data->gemaBSPinnerNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP inner tree
     if (!(nrLeaves > 0 && ReadArrayData(file, nrLeaves, m_data->gemaBSPouterNodes, bytesRead)  == toInt(EalError::OK))) { return toInt(EalError::FileInvalid); } // BSP outer tree
 
+    if (1 + nrPlanes != nrLeaves) { return toInt(EalError::FileInvalid); } // BSP corruption
+
     if (startID >= nrPlanes) // out-of-bounds check
     { startID = 0; }
 
@@ -609,7 +611,7 @@ int32_t EalMan::ReadGemaChunk(
     m_data->gemaNrOuterNodes = nrLeaves;
 
     uint32_t nrDiffBox{};
-    if (readNumber(file, nrDiffBox, bytesRead) !=toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+    if (readNumber(file, nrDiffBox, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
     if (nrDiffBox > 0) // diffraction boxes are optional
     {
         m_data->gemaNrDiffBox = nrDiffBox;
@@ -631,7 +633,11 @@ int32_t EalMan::ReadGemaChunk(
     { return toInt(EalError::FileInvalid); }
      */
 
-    if (!isGEMAdataPlausible()) { return toInt(EalError::FileInvalid); }
+    if (!isGEMAdataPlausible()
+        || hasInfiniteLoop()
+        )
+    { return toInt(EalError::FileInvalid); }
+
     return toInt(EalError::OK);
 }
 
@@ -1019,12 +1025,12 @@ bool EalMan::isGEMAdataPlausible() const
                 && std::isfinite(node.normal.fX)
                 && std::isfinite(node.normal.fY)
                 && std::isfinite(node.normal.fZ)
-                && ((node.childFront & 0x80000000)
-                        ? (((node.childFront & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
+                && ((node.childFront & LeafMask)
+                        ? (((node.childFront & ~LeafMask) < m_data->gemaNrOuterNodes))
                         : (node.childFront < m_data->gemaNrInnerNodes)
                         )
-                && ((node.childBack & 0x80000000)
-                        ? (((node.childBack & 0x7FFFFFFF) < m_data->gemaNrOuterNodes))
+                && ((node.childBack & LeafMask)
+                        ? (((node.childBack & ~LeafMask) < m_data->gemaNrOuterNodes))
                         : (node.childBack < m_data->gemaNrInnerNodes)
                         )
                 ;
@@ -1040,6 +1046,67 @@ bool EalMan::isGEMAdataPlausible() const
     }
 
     return plausible;
+}
+
+bool EalMan::hasInfiniteLoop() const
+{
+    /*
+     * perform an IDDFS on the BSP to find possible infinite loops when traversing the BSP later
+     */
+
+    if (m_data->gemaNrInnerNodes == 0)
+    { return false; }
+
+    struct StackEntry
+    {
+        uint32_t nodeID;
+        bool     postVisit;
+    };
+
+    std::vector<NodeStatus> state(m_data->gemaNrInnerNodes, NodeStatus::Untested);
+    std::vector<StackEntry> stack;
+    stack.reserve(m_data->gemaNrInnerNodes);
+
+    // root
+    stack.push_back({ m_data->gemaStartID, false });
+
+    while (!stack.empty())
+    {
+        StackEntry current = stack.back();
+        stack.pop_back();
+
+        if (current.postVisit)
+        {
+            state[current.nodeID] = NodeStatus::Completed;
+            continue;
+        }
+
+        if (state[current.nodeID] == NodeStatus::Completed)
+        { continue; }
+
+        if (state[current.nodeID] == NodeStatus::Validating) // found an already visited node -> cycle detected
+        { return true; }
+
+        state[current.nodeID] = NodeStatus::Validating;
+        stack.push_back({ current.nodeID, true });
+
+        const SplitNode& node = m_data->gemaBSPinnerNodes[current.nodeID];
+        const uint32_t children[2] = { node.childFront, node.childBack };
+
+        for (uint32_t child : children)
+        {
+            if (child & LeafMask) // found a leaf, search ends
+            { continue; }
+
+            if (state[child] == NodeStatus::Validating) // found an already visited node -> cycle detected
+            { return true; }
+
+            if (state[child] == NodeStatus::Untested) // found a new node -> new path to test
+            { stack.push_back({ child, false }); }
+        }
+    }
+
+    return false;
 }
 
 EalMan::EalMan()
