@@ -259,7 +259,7 @@ struct Zone
 
 enum class NodeStatus
 {
-    NotVisited,
+    Untested,
     Validating,
     Completed
 };

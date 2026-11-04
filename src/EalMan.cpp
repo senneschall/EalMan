@@ -1069,56 +1069,46 @@ bool EalMan::hasInfiniteLoop() const
         bool     postVisit;
     };
 
-    std::vector<NodeStatus> state(m_data->gemaNrInnerNodes, NodeStatus::NotVisited);
+    std::vector<NodeStatus> state(m_data->gemaNrInnerNodes, NodeStatus::Untested);
     std::vector<StackEntry> stack;
     stack.reserve(m_data->gemaNrInnerNodes);
 
     // root
-    stack.push_back({m_data->gemaStartID, false});
+    stack.push_back({ m_data->gemaStartID, false });
 
     while (!stack.empty())
     {
         StackEntry current = stack.back();
         stack.pop_back();
-        const uint32_t nodeID = current.nodeID;
 
         if (current.postVisit)
         {
-            state[nodeID] = NodeStatus::Completed;
+            state[current.nodeID] = NodeStatus::Completed;
             continue;
         }
 
-        switch (state[nodeID])
-        {
-        case NodeStatus::Completed:
-            continue;
+        if (state[current.nodeID] == NodeStatus::Completed)
+        { continue; }
 
-        case NodeStatus::Validating: // found an already visited node -> cycle detected
-            return true;
+        if (state[current.nodeID] == NodeStatus::Validating) // found an already visited node -> cycle detected
+        { return true; }
 
-        case NodeStatus::NotVisited:
-            break;
-        }
+        state[current.nodeID] = NodeStatus::Validating;
+        stack.push_back({ current.nodeID, true });
 
-        state[nodeID] = NodeStatus::Validating;
-        stack.push_back({nodeID, true});
-        const SplitNode& node = m_data->gemaBSPinnerNodes[nodeID];
+        const SplitNode& node = m_data->gemaBSPinnerNodes[current.nodeID];
         const uint32_t children[2] = { node.childFront, node.childBack };
 
         for (uint32_t child : children)
         {
-            if (child & LeafMask) // found a leaf
+            if (child & LeafMask) // found a leaf, search ends
             { continue; }
 
-            const uint32_t childNodeID = child;
-
-            if (state[childNodeID] == NodeStatus::Validating) // found an already visited node -> cycle detected
+            if (state[child] == NodeStatus::Validating) // found an already visited node -> cycle detected
             { return true; }
 
-            if (state[childNodeID] == NodeStatus::NotVisited)
-            {
-                stack.push_back({childNodeID, false});
-            }
+            if (state[child] == NodeStatus::Untested) // found a new node -> new path to test
+            { stack.push_back({ child, false }); }
         }
     }
 
