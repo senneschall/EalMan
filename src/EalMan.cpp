@@ -300,7 +300,7 @@ int32_t EalMan::computeDiffraction(
             float a = static_cast<float>(m_data->gdfm.MaxAttenuation) * angle / anglemax;
             if (!std::isfinite(a)
                 || a < static_cast<float>(INT32_MIN)
-                || a > static_cast<float>(INT32_MAX)
+                || a >= static_cast<float>(INT32_MAX)
                 ) { return INT32_MIN; }
             return static_cast<int32_t>(a);
         }
@@ -592,6 +592,7 @@ int32_t EalMan::ReadGemaChunk(
         || readNumber(file, nrLeaves, bytesRead) != toInt(EalError::OK))
     { return toInt(EalError::FileInvalid); }
 
+    if (nrEnvs >= static_cast<uint32_t>(INT16_MAX) ) { return toInt(EalError::FileInvalid); } // envMatrix squares this number; INT16_MAX (not UINT16_MAX) because each entry has 4 bytes
     const uint32_t envMatrixSize = (nrEnvs + 1) * (nrEnvs + 1);
 
     if (nrSrcs > 0) // sources are optional
@@ -698,8 +699,8 @@ int32_t EalMan::EalEnvironmentAttributes(
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
-    if (res != toInt(EalError::OK))
-    { return res; }
+    if (res != toInt(EalError::OK)) { return res; }
+    if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / (32 + sizeof(EAXListenerProperties))) { return toInt(EalError::FileInvalid); }
     m_data->nrEnvironments = nums;
     if (m_data->nrEnvironments > 0)
     {
@@ -720,8 +721,8 @@ int32_t EalMan::EalObstacleAttributes(
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
-    if (res != toInt(EalError::OK))
-    { return res; }
+    if (res != toInt(EalError::OK)) { return res; }
+    if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / (32 + sizeof(MaterialAttributes))) { return toInt(EalError::FileInvalid); }
     m_data->nrObstacles = nums;
     if (m_data->nrObstacles > 0)
     {
@@ -740,8 +741,8 @@ int32_t EalMan::EalSourceAttributes(
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
-    if (res != toInt(EalError::OK))
-    { return res; }
+    if (res != toInt(EalError::OK)) { return res; }
+    if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / (32 + sizeof(SourceAttributes))) { return toInt(EalError::FileInvalid); }
     m_data->nrSources = nums;
     if (m_data->nrSources > 0)
     {
@@ -765,8 +766,8 @@ int32_t EalMan::EalGeometryAttributes(
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
-    if (res != toInt(EalError::OK))
-    { return res; }
+    if (res != toInt(EalError::OK)) { return res; }
+    if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / 32) { return toInt(EalError::FileInvalid); }
     if (nums > 0)
     {
         if (ReadNamsChunk(file, nums, m_data->geoNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
@@ -1147,7 +1148,7 @@ int32_t EalMan::GetDataSetSize(
     memsize += m_data->geomFileNames.capacity() * sizeof(std::string);
     for (auto& s : m_data->geomFileNames) { memsize += s.capacity(); }
     */
-    memsize += m_data->environments.capacity() * sizeof(ListenerAttributes);
+    memsize += m_data->environments.capacity() * sizeof(EAXListenerProperties);
     memsize += m_data->obstacles.capacity() * sizeof(MaterialAttributes);
     memsize += m_data->sources.capacity() * sizeof(SourceAttributes);
 
@@ -1176,7 +1177,9 @@ int32_t EalMan::LoadDataSet(
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) { return toInt(EalError::FileNotFound); }
 
-    return ParseDataSet(file);
+    const int32_t res = ParseDataSet(file);
+    if (res != toInt(EalError::OK)) { FreeDataSet(0); }
+    return res;
 }
 
 int32_t EalMan::LoadDataSetFromMemory(
@@ -1187,7 +1190,12 @@ int32_t EalMan::LoadDataSetFromMemory(
 
     if (file)
     {
-        if (file.good()) { return ParseDataSet(file); }
+        if (file.good())
+        {
+            const int32_t res = ParseDataSet(file);
+            if (res != toInt(EalError::OK)) { FreeDataSet(0); }
+            return res;
+        }
         else { return toInt(EalError::FileInvalid); }
     }
     else { return toInt(EalError::FileNotFound); }
@@ -1413,9 +1421,9 @@ int32_t EalMan::GetListenerDynamicAttributes(
             || m_data->gemaNrOuterNodes == 0)
     { return toInt(EalError::IdNotFound); }
 
-    if (lstPos.fX < -32768.0f || lstPos.fX > +32768.0f
-            || lstPos.fY < -32768.0f || lstPos.fY > +32768.0f
-            || lstPos.fZ < -32768.0f || lstPos.fZ > +32768.0f)
+    if (!std::isfinite(lstPos.fX) || lstPos.fX < -32768.0f || lstPos.fX > +32768.0f
+            || !std::isfinite(lstPos.fY) || lstPos.fY < -32768.0f || lstPos.fY > +32768.0f
+            || !std::isfinite(lstPos.fZ) || lstPos.fZ < -32768.0f || lstPos.fZ > +32768.0f)
     { return toInt(EalError::IdNotFound); }
 
     int32_t idxEnvID{};
@@ -1466,9 +1474,9 @@ int32_t EalMan::GetSourceDynamicAttributes(
             || m_data->gemaNrEnvIDs == 0)
     { return toInt(EalError::IdNotFound); }
 
-    if (srcPos.fX < -32768.0f || srcPos.fX > +32768.0f
-            || srcPos.fY < -32768.0f || srcPos.fY > +32768.0f
-            || srcPos.fZ < -32768.0f || srcPos.fZ > +32768.0f)
+    if (!std::isfinite(srcPos.fX) || srcPos.fX < -32768.0f || srcPos.fX > +32768.0f
+            || !std::isfinite(srcPos.fY) || srcPos.fY < -32768.0f || srcPos.fY > +32768.0f
+            || !std::isfinite(srcPos.fZ) || srcPos.fZ < -32768.0f || srcPos.fZ > +32768.0f)
     { return toInt(EalError::IdNotFound); }
 
     int32_t src_EnvIDIndex = static_cast<int32_t>(EMFLAG_IDDEFAULT);
