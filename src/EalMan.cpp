@@ -1115,7 +1115,7 @@ bool EalMan::isGEMAdataPlausible() const
     for (const Zone& zone : m_data->gemaBSPouterNodes)
     {
         plausible = plausible
-                && (zone.indexEnvID >= static_cast<int32_t>(EMFLAG_IDNONE))
+                && (zone.indexEnvID >= static_cast<int32_t>(EMFLAG_IDDEFAULT))
                 && (zone.indexEnvID < static_cast<int32_t>(m_data->gemaNrEnvIDs))
                 ;
     }
