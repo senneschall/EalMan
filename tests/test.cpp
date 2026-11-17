@@ -169,6 +169,20 @@ namespace LoadDataSet
             int32_t result = man.LoadDataSet("WrongEnvIndex.eal", 0);
             EXPECT_EQ(result, toInt(EalError::FileInvalid));
         }
+
+        TEST(FailingEalFiles, LoadDataSet_ChunkOrder)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("WrongChunkOrder.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::FileInvalid));
+        }
+
+        TEST(FailingEalFiles, LoadDataSet_DoubledChunk)
+        {
+            EalMan man;
+            int32_t result = man.LoadDataSet("DoubledSrcpChunk.eal", 0);
+            EXPECT_EQ(result, toInt(EalError::OK));
+        }
     }
 }
 #pragma endregion

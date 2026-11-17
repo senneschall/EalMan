@@ -51,6 +51,14 @@ enum class FourCCreq : uint32_t
     ENVP_NAMS,
     ENVP_LISP,
 
+    // srcp subchunks
+    SRCP_NAMS,
+    SRCP_SRCA,
+
+    // matp subchunks
+    MATP_NAMS,
+    MATP_MATA,
+
     // gemp subchunks
     GEMP_NAMS,
     GEMP_GEMA,

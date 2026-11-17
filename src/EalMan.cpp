@@ -467,9 +467,9 @@ int32_t EalMan::EalList(
     if (to_u32_le(fourCC) == static_cast<uint32_t>(FourCC::ENVP))
     { return EalEnvironmentAttributes(file, reqFourCC, bytesRead); }
     if (to_u32_le(fourCC) == static_cast<uint32_t>(FourCC::MATP))
-    { return EalObstacleAttributes(file, bytesRead); }
+    { return EalObstacleAttributes(file, reqFourCC, bytesRead); }
     if (to_u32_le(fourCC) == static_cast<uint32_t>(FourCC::SRCP))
-    { return EalSourceAttributes(file, bytesRead); }
+    { return EalSourceAttributes(file, reqFourCC, bytesRead); }
     if (to_u32_le(fourCC) == static_cast<uint32_t>(FourCC::GEMP))
     { return EalGeometryAttributes(file, reqFourCC, bytesRead); }
 
@@ -701,60 +701,121 @@ int32_t EalMan::EalEnvironmentAttributes(
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK)) { return res; }
     if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / (32 + sizeof(EAXListenerProperties))) { return toInt(EalError::FileInvalid); }
-    m_data->nrEnvironments = nums;
-    if (m_data->nrEnvironments > 0)
-    {
-        if (ReadNamsChunk(file, m_data->nrEnvironments, m_data->envNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        reqFourCC.set(static_cast<uint32_t>(FourCCreq::ENVP_NAMS));
 
-        if (ReadDataChunk(file, m_data->nrEnvironments, FourCC::LISP, m_data->environments, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        reqFourCC.set(static_cast<uint32_t>(FourCCreq::ENVP_LISP));
-        if (!isLISPdataPlausible()) { return toInt(EalError::FileInvalid); }
+    /* gema chunk data plausibility relies on a known and fixed nrEnvironments, so this can't be changed after the gema chunk was parsed */
+    if (!reqFourCC.test(static_cast<uint32_t>(FourCCreq::GEMP_GEMA)))
+    {
+        m_data->nrEnvironments = nums;
+        if (m_data->nrEnvironments > 0)
+        {
+            if (ReadNamsChunk(file, m_data->nrEnvironments, m_data->envNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+            reqFourCC.set(static_cast<uint32_t>(FourCCreq::ENVP_NAMS));
+
+            if (ReadDataChunk(file, m_data->nrEnvironments, FourCC::LISP, m_data->environments, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+            reqFourCC.set(static_cast<uint32_t>(FourCCreq::ENVP_LISP));
+            if (!isLISPdataPlausible()) { return toInt(EalError::FileInvalid); }
+        }
     }
+    else // skip this chunk
+    {
+        /* NAMS chunk: 8 bytes chunk + 32 bytes each string */
+        const uint32_t namsSize = 8 + nums * 32;
+        file.ignore(static_cast<std::streamsize>(namsSize));
+        bytesRead += namsSize;
+        /* LISP chunk: 8 bytes chunk + 32 bytes each string */
+        const uint32_t lispSize = 8 + nums * sizeof(EAXListenerProperties);
+        file.ignore(static_cast<std::streamsize>(lispSize));
+        bytesRead += lispSize;
+    }
+
     return toInt(EalError::OK);
 }
 
 int32_t EalMan::EalObstacleAttributes(
-    std::istream&   file,
-    uint32_t&       bytesRead
+    std::istream&                                           file,
+    std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+    uint32_t&                                               bytesRead
     )
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK)) { return res; }
     if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / (32 + sizeof(MaterialAttributes))) { return toInt(EalError::FileInvalid); }
-    m_data->nrObstacles = nums;
-    if (m_data->nrObstacles > 0)
-    {
-        if (ReadNamsChunk(file, m_data->nrObstacles, m_data->obsNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
 
-        if (ReadDataChunk(file, m_data->nrObstacles, FourCC::MATA, m_data->obstacles, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        if (!isMATAdataPlausible()) { return toInt(EalError::FileInvalid); }
+    /* gema chunk data plausibility relies on a known and fixed nrObstacles, so this can't be changed after the gema chunk was parsed */
+    if (!reqFourCC.test(static_cast<uint32_t>(FourCCreq::GEMP_GEMA)))
+    {
+        m_data->nrObstacles = nums;
+        if (m_data->nrObstacles > 0)
+        {
+            if (ReadNamsChunk(file, m_data->nrObstacles, m_data->obsNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+
+            if (ReadDataChunk(file, m_data->nrObstacles, FourCC::MATA, m_data->obstacles, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+            if (!isMATAdataPlausible()) { return toInt(EalError::FileInvalid); }
+        }
+        reqFourCC.set(static_cast<uint32_t>(FourCCreq::MATP_NAMS));
+        reqFourCC.set(static_cast<uint32_t>(FourCCreq::MATP_MATA));
     }
+    else // skip this chunk
+    {
+        /* NAMS chunk: 8 bytes chunk + 32 bytes each string */
+        const uint32_t namsSize = 8 + nums * 32;
+        file.ignore(static_cast<std::streamsize>(namsSize));
+        bytesRead += namsSize;
+        /* MATA chunk: 8 bytes chunk + 32 bytes each string */
+        const uint32_t mataSize = 8 + nums * sizeof(EAXListenerProperties);
+        file.ignore(static_cast<std::streamsize>(mataSize));
+        bytesRead += mataSize;
+    }
+
     return toInt(EalError::OK);
 }
 
 int32_t EalMan::EalSourceAttributes(
-    std::istream&   file,
-    uint32_t&       bytesRead
+    std::istream&                                           file,
+    std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+    uint32_t&                                               bytesRead
     )
 {
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK)) { return res; }
     if (nums > (static_cast<uint32_t>(m_fileSize) - bytesRead) / (32 + sizeof(SourceAttributes))) { return toInt(EalError::FileInvalid); }
-    m_data->nrSources = nums;
-    if (m_data->nrSources > 0)
+
+    /* gema chunk data plausibility relies on a known and fixed nrSources, so this can't be changed after the gema chunk was parsed */
+    if (!reqFourCC.test(static_cast<uint32_t>(FourCCreq::GEMP_GEMA)))
     {
-        if (ReadNamsChunk(file, m_data->nrSources, m_data->srcNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+        m_data->nrSources = nums;
+        if (m_data->nrSources > 0)
+        {
+            if (ReadNamsChunk(file, m_data->nrSources, m_data->srcNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
 
-        //if (ReadFilsChunk(file, count, m_data->srcFileNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        file.ignore(8 + static_cast<std::streamsize>(m_data->nrSources) * 260); // 8 bytes chunk + 260 bytes each string
-		bytesRead += 8 + m_data->nrSources * 260;
+            //if (ReadFilsChunk(file, count, m_data->srcFileNames, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+            file.ignore(8 + static_cast<std::streamsize>(m_data->nrSources) * 260); // 8 bytes chunk + 260 bytes each string
+		    bytesRead += 8 + m_data->nrSources * 260;
 
-        if (ReadDataChunk(file, m_data->nrSources, FourCC::SRCA, m_data->sources, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
-        if (!isSRCAdataPlausible()) { return toInt(EalError::FileInvalid); }
+            if (ReadDataChunk(file, m_data->nrSources, FourCC::SRCA, m_data->sources, bytesRead) != toInt(EalError::OK)) { return toInt(EalError::FileInvalid); }
+            if (!isSRCAdataPlausible()) { return toInt(EalError::FileInvalid); }
+        }
+        reqFourCC.set(static_cast<uint32_t>(FourCCreq::SRCP_NAMS));
+        reqFourCC.set(static_cast<uint32_t>(FourCCreq::SRCP_SRCA));
     }
+    else // skip this chunk
+    {
+        /* NAMS chunk: 8 bytes chunk + 32 bytes each string */
+        const uint32_t namsSize = 8 + nums * 32;
+        file.ignore(static_cast<std::streamsize>(namsSize));
+        bytesRead += namsSize;
+        /* FILS chunk: 8 bytes chunk + 260 bytes each string */
+        const uint32_t filsSize = 8 + nums * 260;
+        file.ignore(static_cast<std::streamsize>(filsSize));
+        bytesRead += filsSize;
+        /* SRCA chunk: 8 bytes chunk + 32 bytes each string */
+        const uint32_t srcaSize = 8 + nums * sizeof(SourceAttributes);
+        file.ignore(static_cast<std::streamsize>(srcaSize));
+        bytesRead += srcaSize;
+    }
+
     return toInt(EalError::OK);
 }
 
@@ -764,6 +825,13 @@ int32_t EalMan::EalGeometryAttributes(
     uint32_t&                                               bytesRead
     )
 {
+    /* gema chunk data plausibility relies on a known and fixed constants of other chunks, therefore they must be parsed already */
+    if (!reqFourCC.test(static_cast<uint32_t>(FourCCreq::ENVP_LISP))
+        || !reqFourCC.test(static_cast<uint32_t>(FourCCreq::SRCP_SRCA))
+        || !reqFourCC.test(static_cast<uint32_t>(FourCCreq::MATP_MATA))
+        )
+    { return toInt(EalError::FileInvalid); }
+
     uint32_t nums{};
     const int32_t res = ReadNumsChunk(file, nums, bytesRead);
     if (res != toInt(EalError::OK)) { return res; }

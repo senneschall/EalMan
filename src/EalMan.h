@@ -62,13 +62,15 @@ private:
             );
 
     int32_t EalObstacleAttributes(
-            std::istream&   file,
-            uint32_t&       bytesRead
+            std::istream&                                           file,
+            std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+            uint32_t&                                               bytesRead
             );
 
     int32_t EalSourceAttributes(
-            std::istream&   file,
-            uint32_t&       bytesRead
+            std::istream&                                           file,
+            std::bitset<static_cast<uint32_t>(FourCCreq::COUNT)>&   reqFourCC,
+            uint32_t&                                               bytesRead
             );
 
     int32_t EalGeometryAttributes(
