@@ -18,6 +18,8 @@ private:
 
     /* file size in bytes */
     size_t   m_fileSize{};
+    /* API guard */
+    bool     m_empty{true};
 
     int32_t getIndexIDfromBSP(
         int32_t&        idx,
@@ -147,7 +149,7 @@ public:
      *
      * @param sizeDataSet [out] Size in bytes of currently loaded dataset.
      * @param flags [in] Flags, reserved for future use.
-     * @return EM_OK
+     * @return EM_OK, EM_INSTANCENOTFOUND
      */
     int32_t GetDataSetSize(
             uint32_t&        sizeDataSet,
@@ -190,7 +192,7 @@ public:
      * @brief gets the listener attributes from the loaded eal dataset
      *
      * @param lstAttributes [out] Listener attribute structure, use this structure to set DirectSound3D Listener properties
-     * @return EM_OK
+     * @return EM_OK, EM_INSTANCENOTFOUND
      */
     int32_t GetListenerAttributes(
             ListenerAttributes&   lstAttributes
@@ -201,7 +203,7 @@ public:
      *
      * @param srcName [in] name of source to get ID for
      * @param srcID [out] ID to use for source
-     * @return EM_OK, EM_IDNOTFOUND
+     * @return EM_OK, EM_IDNOTFOUND, EM_INSTANCENOTFOUND
      */
     int32_t GetSourceID(
             const std::string&   srcName,
@@ -213,7 +215,7 @@ public:
      *
      * @param srcID [in] ID to use for source
      * @param srcAttributes [out] Source attribute structure; Use this structure to set DirectSound3D Buffer properties
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_INVALIDID, EM_INSTANCENOTFOUND
      */
     int32_t GetSourceAttributes(
             const int32_t       srcID,
@@ -225,7 +227,7 @@ public:
      *
      * @param srcID [in] ID to use for source
      * @param srcInstances [out] Number of instances of the source placed in this geometry set
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_INVALIDID, EM_INSTANCENOTFOUND
      */
     int32_t GetSourceNumInstances(
             const int32_t   srcID,
@@ -251,7 +253,7 @@ public:
      *
      * @param envName [in] name of environment to get ID for
      * @param envID [out] ID to use for environment
-     * @return EM_OK, EM_IDNOTFOUND
+     * @return EM_OK, EM_IDNOTFOUND, EM_INSTANCENOTFOUND
      */
     int32_t GetEnvironmentID(
             const std::string&   envName,
@@ -263,7 +265,7 @@ public:
      *
      * @param envID [in] ID to use for environment
      * @param envAttributes [out] Environment attribute structure; Use this structure to set DirectSound3D EAXListener properties
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_INVALIDID, EM_INSTANCENOTFOUND
      */
     int32_t GetEnvironmentAttributes(
             const int32_t            envID,
@@ -275,7 +277,7 @@ public:
      *
      * @param matName [in] name of material to get ID for
      * @param matID [out] ID to use for material
-     * @return EM_OK, EM_IDNOTFOUND
+     * @return EM_OK, EM_IDNOTFOUND, EM_INSTANCENOTFOUND
      */
     int32_t GetMaterialID(
             const std::string&   matName,
@@ -287,7 +289,7 @@ public:
      *
      * @param matID [in] ID to use for material
      * @param matAttributes [out] Material attribute structure; Use this structure to set DirectSound3D EAXBuffer properties
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_INVALIDID, EM_INSTANCENOTFOUND
      */
     int32_t GetMaterialAttributes(
             const int32_t         matID,
@@ -299,7 +301,7 @@ public:
      *
      * @param geomName [in] name of geometry set to get ID for
      * @param geomID [out] ID to use for geometry set
-     * @return EM_OK, EM_IDNOTFOUND
+     * @return EM_OK, EM_IDNOTFOUND, EM_INSTANCENOTFOUND
      */
     int32_t GetGeometrySetID(
             const std::string&   geomName,
@@ -313,7 +315,7 @@ public:
      * @param lstPos [in] Current position of 3D listener
      * @param envID [out] ID to use for current environment
      * @param flags [in] Flags to use while getting attributes - EMFLAG_LOCKPOSITION saves the lstPos for subsequent use in GetSourceDynamicAttributes()
-     * @return EM_OK, EM_IDNOTFOUND
+     * @return EM_OK, EM_IDNOTFOUND, EM_INSTANCENOTFOUND
      */
     int32_t GetListenerDynamicAttributes(
             const int32_t    geomID,
@@ -334,7 +336,7 @@ public:
      * @param srcOcclusionRM [out] Source occlusion room ratio attribute; Use this value to set DirectSound3D Buffer properties
      * @param virtPos [out] Virtual position to use for positioning sound (currently not implemented)
      * @param flags [in] Flags (currently unused)
-     * @return EM_OK, EM_IDNOTFOUND
+     * @return EM_OK, EM_IDNOTFOUND, EM_INSTANCENOTFOUND
      */
     int32_t GetSourceDynamicAttributes(
             const int32_t    geomID,
@@ -355,7 +357,7 @@ public:
      * @param srcID [in] environment ID, whose name is to be searched for
      * @param envName [out] environment name
      * @param maxNameSize [in] maximum name size (currently unused)
-     * @return EM_OK, EM_INVALIDID
+     * @return EM_OK, EM_INVALIDID, EM_INSTANCENOTFOUND
      */
     int32_t GetEnvironmentName(
             const int32_t    envID,

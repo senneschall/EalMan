@@ -408,8 +408,8 @@ namespace GetDataSetSize
             EalMan man;
             uint32_t size = 0;
             int32_t resSize = man.GetDataSetSize(size, 0);
-            EXPECT_EQ(resSize, toInt(EalError::OK));
-            EXPECT_EQ(size, sizeof(EalData));
+            EXPECT_EQ(resSize, toInt(EalError::InstanceNotFound));
+            EXPECT_EQ(size, 0);
         }
     }
 }
@@ -433,8 +433,8 @@ namespace FreeDataSet
             EXPECT_EQ(resFree, toInt(EalError::OK));
             uint32_t freesize = 0;
             int32_t resEmpty = man.GetDataSetSize(freesize, 0);
-            EXPECT_EQ(resEmpty, toInt(EalError::OK));
-            EXPECT_EQ(freesize, sizeof(EalData));
+            EXPECT_EQ(resEmpty, toInt(EalError::InstanceNotFound));
+            EXPECT_EQ(freesize, 0);
         }
     }
 }
@@ -466,7 +466,7 @@ namespace GetListenerAttributes
             EalMan man;
             ListenerAttributes la{};
             int32_t resGLA = man.GetListenerAttributes(la);
-            EXPECT_EQ(resGLA, toInt(EalError::OK));
+            EXPECT_EQ(resGLA, toInt(EalError::InstanceNotFound));
             EXPECT_FLOAT_EQ(la.fDistanceFactor, {});
             EXPECT_FLOAT_EQ(la.fDopplerFactor, {});
             EXPECT_FLOAT_EQ(la.fRolloffFactor, {});
@@ -477,7 +477,7 @@ namespace GetListenerAttributes
             EalMan man;
             ListenerAttributes la;
             int32_t resGLA = man.GetListenerAttributes(la);
-            EXPECT_EQ(resGLA, toInt(EalError::OK));
+            EXPECT_EQ(resGLA, toInt(EalError::InstanceNotFound));
             EXPECT_FLOAT_EQ(la.fDistanceFactor, {});
             EXPECT_FLOAT_EQ(la.fDopplerFactor, {});
             EXPECT_FLOAT_EQ(la.fRolloffFactor, {});
@@ -539,7 +539,7 @@ namespace GetSourceID
             EalMan man;
             int32_t srcID{};
             int32_t resGSI = man.GetSourceID("DoesNotExist", srcID);
-            EXPECT_EQ(resGSI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGSI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(srcID, {});
         }
 
@@ -548,7 +548,7 @@ namespace GetSourceID
             EalMan man;
             int32_t srcID;
             int32_t resGSI = man.GetSourceID("DoesNotExist", srcID);
-            EXPECT_EQ(resGSI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGSI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(srcID, {});
         }
     }
@@ -677,7 +677,7 @@ namespace GetSourceAttributes
             EalMan man;
             SourceAttributes sa{};
             int32_t resGLA = man.GetSourceAttributes(0, sa);
-            EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGLA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(sa.eaxAttributes.lDirect, {});
             EXPECT_EQ(sa.eaxAttributes.lDirectHF, {});
             EXPECT_EQ(sa.eaxAttributes.lRoom, {});
@@ -708,7 +708,7 @@ namespace GetSourceAttributes
             EalMan man;
             SourceAttributes sa;
             int32_t resGLA = man.GetSourceAttributes(0, sa);
-            EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGLA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(sa.eaxAttributes.lDirect, {});
             EXPECT_EQ(sa.eaxAttributes.lDirectHF, {});
             EXPECT_EQ(sa.eaxAttributes.lRoom, {});
@@ -968,7 +968,7 @@ namespace GetEnvironmentID
             EalMan man;
             int32_t envID{};
             int32_t resGEI = man.GetEnvironmentID("DoesNotExist", envID);
-            EXPECT_EQ(resGEI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGEI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(envID, {});
         }
 
@@ -977,7 +977,7 @@ namespace GetEnvironmentID
             EalMan man;
             int32_t envID;
             int32_t resGEI = man.GetEnvironmentID("DoesNotExist", envID);
-            EXPECT_EQ(resGEI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGEI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(envID, {});
         }
     }
@@ -1087,7 +1087,7 @@ namespace GetEnvironmentAttributes
             EalMan man;
             EAXListenerProperties ea{};
             int32_t resGLA = man.GetEnvironmentAttributes(0, ea);
-            EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGLA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(ea.lRoom, {});
             EXPECT_EQ(ea.lRoomHF, {});
             EXPECT_FLOAT_EQ(ea.flRoomRolloffFactor, {});
@@ -1109,7 +1109,7 @@ namespace GetEnvironmentAttributes
             EalMan man;
             EAXListenerProperties ea;
             int32_t resGLA = man.GetEnvironmentAttributes(0, ea);
-            EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGLA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(ea.lRoom, {});
             EXPECT_EQ(ea.lRoomHF, {});
             EXPECT_FLOAT_EQ(ea.flRoomRolloffFactor, {});
@@ -1182,7 +1182,7 @@ namespace GetMaterialID
             EalMan man;
             int32_t matID{};
             int32_t resGMI = man.GetMaterialID("", matID);
-            EXPECT_EQ(resGMI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGMI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(matID, {});
         }
 
@@ -1191,7 +1191,7 @@ namespace GetMaterialID
             EalMan man;
             int32_t matID;
             int32_t resGMI = man.GetMaterialID("", matID);
-            EXPECT_EQ(resGMI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGMI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(matID, {});
         }
     }
@@ -1263,7 +1263,7 @@ namespace GetMaterialAttributes
             EalMan man;
             MaterialAttributes ma{};
             int32_t resGMA = man.GetMaterialAttributes(0, ma);
-            EXPECT_EQ(resGMA, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGMA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(ma.lLevel, {});
             EXPECT_FLOAT_EQ(ma.fLFRatio, {});
             EXPECT_FLOAT_EQ(ma.fRoomRatio, {});
@@ -1275,7 +1275,7 @@ namespace GetMaterialAttributes
             EalMan man;
             MaterialAttributes ma;
             int32_t resGMA = man.GetMaterialAttributes(0, ma);
-            EXPECT_EQ(resGMA, toInt(EalError::InvalidId));
+            EXPECT_EQ(resGMA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(ma.lLevel, {});
             EXPECT_FLOAT_EQ(ma.fLFRatio, {});
             EXPECT_FLOAT_EQ(ma.fRoomRatio, {});
@@ -1348,7 +1348,7 @@ namespace GetGeometrySetID
             EalMan man;
             int32_t geoID{};
             int32_t resGGI = man.GetGeometrySetID("", geoID);
-            EXPECT_EQ(resGGI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGGI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(geoID, {});
         }
 
@@ -1357,7 +1357,7 @@ namespace GetGeometrySetID
             EalMan man;
             int32_t geoID;
             int32_t resGGI = man.GetGeometrySetID("", geoID);
-            EXPECT_EQ(resGGI, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGGI, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(geoID, {});
         }
     }
@@ -1495,7 +1495,7 @@ namespace GetListenerDynamicAttributes
             int32_t envID{};
             EMPoint pos{};
             int32_t resGDA = man.GetListenerDynamicAttributes(0, pos, envID, 0);
-            EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGDA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(envID, {});
         }
 
@@ -1505,7 +1505,7 @@ namespace GetListenerDynamicAttributes
             int32_t envID;
             EMPoint pos{};
             int32_t resGDA = man.GetListenerDynamicAttributes(0, pos, envID, 0);
-            EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGDA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(envID, {});
         }
     }
@@ -1729,7 +1729,7 @@ namespace GetSourceDynamicAttributes
             float orm{};
             EMPoint vPos{};
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
-            EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGDA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(obs, { 0 });
             EXPECT_FLOAT_EQ(olf, { 0.0f });
             EXPECT_EQ(occ, { 0 });
@@ -1748,7 +1748,7 @@ namespace GetSourceDynamicAttributes
             float orm;
             EMPoint vPos;
             int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
-            EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
+            EXPECT_EQ(resGDA, toInt(EalError::InstanceNotFound));
             EXPECT_EQ(obs, { 0 });
             EXPECT_FLOAT_EQ(olf, { 0.0f });
             EXPECT_EQ(occ, { 0 });

@@ -1128,6 +1128,12 @@ int32_t EalMan::GetDataSetSize(
     const uint32_t   /* flags */
     ) const
 {
+    if (m_empty)
+    {
+        sizeDataSet = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     size_t memsize = sizeof(EalData);
 
     memsize += m_data->envNames.capacity() * sizeof(std::string);
@@ -1270,6 +1276,7 @@ int32_t EalMan::ParseDataSet(
     /* if (bytesRead != mainChunk.length) { return toInt(EalError::FileInvalid); } */ // test disabled because "DM-Morbias][.eal" has wrong chunk sizes in its data and would fail here
     if (!reqFourCC.all()) { return toInt(EalError::FileInvalid); } // at least one required Chunk could not be parsed
 
+    m_empty = false;
     return toInt(EalError::OK);
 }
 
@@ -1277,10 +1284,13 @@ int32_t EalMan::FreeDataSet(
     const uint32_t   /* flags */
     )
 {
+    if (m_empty) { return toInt(EalError::OK); }
+
     m_data = std::unique_ptr<EalData>(new EalData());
     m_listenerPosition = {};
     m_listenerEnvIDIndex= {};
     m_fileSize = {};
+    m_empty = true;
 
     return toInt(EalError::OK);
 }
@@ -1289,6 +1299,12 @@ int32_t EalMan::GetListenerAttributes(
     ListenerAttributes&   lstAttributes
     ) const
 {
+    if (m_empty)
+    {
+        lstAttributes = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     lstAttributes = m_data->defListener;
     return toInt(EalError::OK);
 }
@@ -1298,6 +1314,12 @@ int32_t EalMan::GetSourceID(
     int32_t&             srcID
     ) const
 {
+    if (m_empty)
+    {
+        srcID = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     srcID = {};
     if (srcName.size() < 1) { return toInt(EalError::IdNotFound); }
     return GetID(srcName, srcID, m_data->srcNames);
@@ -1308,6 +1330,12 @@ int32_t EalMan::GetSourceAttributes(
     SourceAttributes&   srcAttributes
     ) const
 {
+    if (m_empty)
+    {
+        srcAttributes = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     if (srcID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
         srcAttributes = m_data->defSource;
@@ -1321,6 +1349,12 @@ int32_t EalMan::GetSourceNumInstances(
     int32_t&        srcInstances
     ) const
 {
+    if (m_empty)
+    {
+        srcInstances = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     srcInstances = {};
     if (srcID < 0 || static_cast<uint32_t>(srcID) >= m_data->nrSources) { return toInt(EalError::InvalidId); }
 
@@ -1336,6 +1370,8 @@ int32_t EalMan::GetSourceInstancePos(
     ) const
 {
     posInstance = {};
+    if (m_empty) { return toInt(EalError::InstanceNotFound); }
+
     int32_t srcInst{};
     if (GetSourceNumInstances(srcID, srcInst) != toInt(EalError::OK)) { return toInt(EalError::InvalidId); } // already checks if srcID is valid
     if (srcInstance < 0 || srcInstance >= srcInst) { return toInt(EalError::InstanceNotFound); }
@@ -1361,6 +1397,12 @@ int32_t EalMan::GetEnvironmentID(
     int32_t&             envID
     ) const
 {
+    if (m_empty)
+    {
+        envID = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     return GetID(envName, envID, m_data->envNames);
 }
 
@@ -1369,6 +1411,12 @@ int32_t EalMan::GetEnvironmentAttributes(
     EAXListenerProperties&   envAttributes
     ) const
 {
+    if (m_empty)
+    {
+        envAttributes = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     if (envID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
         envAttributes = m_data->defEnvironment;
@@ -1382,6 +1430,12 @@ int32_t EalMan::GetMaterialID(
     int32_t&             matID
     ) const
 {
+    if (m_empty)
+    {
+        matID = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     return GetID(matName, matID, m_data->obsNames);
 }
 
@@ -1390,6 +1444,12 @@ int32_t EalMan::GetMaterialAttributes(
     MaterialAttributes&   matAttributes
     ) const
 {
+    if (m_empty)
+    {
+        matAttributes = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     if (matID == static_cast<int32_t>(EMFLAG_IDDEFAULT))
     {
         matAttributes = m_data->defObstacle;
@@ -1403,6 +1463,12 @@ int32_t EalMan::GetGeometrySetID(
     int32_t&             geomID
     ) const
 {
+    if (m_empty)
+    {
+        geomID = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     return GetID(geomName, geomID, m_data->geoNames);
 }
 
@@ -1414,6 +1480,7 @@ int32_t EalMan::GetListenerDynamicAttributes(
     )
 {
     envID = {};
+    if (m_empty) { return toInt(EalError::InstanceNotFound); }
     //int32_t length = (int32_t)m_data->geoNames.size();
     //if (geomID < 0 || geomID >= length) { return toInt(EalError::IdNotFound); } // all UT .eal files only have a single geometry set, so the selection is skipped for now
     if (geomID != 0
@@ -1468,6 +1535,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
     srcOcclusionRM = {0.5f};
     virtPos = srcPos; // not implemented in EAX Manager either
 
+    if (m_empty) { return toInt(EalError::InstanceNotFound); }
     /* int32_t length = static_cast<int32_t>(m_data->geoNames.size()); */ // UT .eal files only have 1 geometry, so skip this
     /* if (geomID < 0 || geomID >= length ) { return toInt(EalError::IdNotFound); } */
     if (geomID != 0
@@ -1714,6 +1782,12 @@ int32_t EalMan::GetEnvironmentName(
     const uint32_t   /* maxNameSize */
     ) const
 {
+    if (m_empty)
+    {
+        envName = {};
+        return toInt(EalError::InstanceNotFound);
+    }
+
     if (envID < 0 || static_cast<uint32_t>(envID) >= m_data->nrEnvironments) { return toInt(EalError::InvalidId); }
     envName = m_data->envNames[envID];
     return toInt(EalError::OK);
