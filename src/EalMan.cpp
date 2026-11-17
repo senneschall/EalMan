@@ -511,6 +511,7 @@ int32_t EalMan::ReadNamsChunk(
         if (nams.fourCC != FourCC::NAMS) { return toInt(EalError::FileInvalid); }
     }
 
+    dest.clear(); // reading other data replaces existing ones, so names should not append but replace as well
     dest.reserve(dest.size() + count);
     for (uint32_t i = 0; i < count; i++)
     {
@@ -722,7 +723,7 @@ int32_t EalMan::EalEnvironmentAttributes(
         const uint32_t namsSize = 8 + nums * 32;
         file.ignore(static_cast<std::streamsize>(namsSize));
         bytesRead += namsSize;
-        /* LISP chunk: 8 bytes chunk + 32 bytes each string */
+        /* LISP chunk: 8 bytes chunk + EAXListenerProperties array */
         const uint32_t lispSize = 8 + nums * sizeof(EAXListenerProperties);
         file.ignore(static_cast<std::streamsize>(lispSize));
         bytesRead += lispSize;
@@ -762,8 +763,8 @@ int32_t EalMan::EalObstacleAttributes(
         const uint32_t namsSize = 8 + nums * 32;
         file.ignore(static_cast<std::streamsize>(namsSize));
         bytesRead += namsSize;
-        /* MATA chunk: 8 bytes chunk + 32 bytes each string */
-        const uint32_t mataSize = 8 + nums * sizeof(EAXListenerProperties);
+        /* MATA chunk: 8 bytes chunk + MaterialAttributes array */
+        const uint32_t mataSize = 8 + nums * sizeof(MaterialAttributes);
         file.ignore(static_cast<std::streamsize>(mataSize));
         bytesRead += mataSize;
     }
@@ -810,7 +811,7 @@ int32_t EalMan::EalSourceAttributes(
         const uint32_t filsSize = 8 + nums * 260;
         file.ignore(static_cast<std::streamsize>(filsSize));
         bytesRead += filsSize;
-        /* SRCA chunk: 8 bytes chunk + 32 bytes each string */
+        /* SRCA chunk: 8 bytes chunk + SourceAttributes array */
         const uint32_t srcaSize = 8 + nums * sizeof(SourceAttributes);
         file.ignore(static_cast<std::streamsize>(srcaSize));
         bytesRead += srcaSize;
@@ -1352,8 +1353,6 @@ int32_t EalMan::FreeDataSet(
     const uint32_t   /* flags */
     )
 {
-    if (m_empty) { return toInt(EalError::OK); }
-
     m_data = std::unique_ptr<EalData>(new EalData());
     m_listenerPosition = {};
     m_listenerEnvIDIndex= {};
