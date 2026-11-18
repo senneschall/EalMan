@@ -117,7 +117,7 @@ private:
             const std::string&          name,
             int32_t&                    id,
             std::vector<std::string>&   dataset
-            ) const;
+            ) const noexcept;
 
     template <typename T>
     int32_t GetAttributes(
@@ -125,21 +125,21 @@ private:
             const int32_t     length,
             T&                attributes,
             std::vector<T>&   dataset
-            ) const;
+            ) const noexcept;
 
     int32_t ParseDataSet(
             std::istream&   file
             );
 
-    inline bool isGDFMdataPlausible() const;
-    inline bool isDEFLdataPlausible() const;
-    inline bool isDEFEdataPlausible() const;
-    inline bool isDEFSdataPlausible() const;
-    inline bool isDEFMdataPlausible() const;
-    bool isLISPdataPlausible() const;
-    bool isMATAdataPlausible() const;
-    bool isSRCAdataPlausible() const;
-    bool isGEMAdataPlausible() const;
+    inline bool isGDFMdataPlausible() const noexcept;
+    inline bool isDEFLdataPlausible() const noexcept;
+    inline bool isDEFEdataPlausible() const noexcept;
+    inline bool isDEFSdataPlausible() const noexcept;
+    inline bool isDEFMdataPlausible() const noexcept;
+    bool isLISPdataPlausible() const noexcept;
+    bool isMATAdataPlausible() const noexcept;
+    bool isSRCAdataPlausible() const noexcept;
+    bool isGEMAdataPlausible() const noexcept;
     bool hasInfiniteLoop() const;
 
 public:

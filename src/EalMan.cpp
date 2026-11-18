@@ -653,7 +653,7 @@ int32_t EalMan::GetID(
     const std::string&          name,
     int32_t&                    id,
     std::vector<std::string>&   dataset
-    ) const
+    ) const noexcept
 {
     id = {};
     if (name.size() < 1 || name.size() > 32) { return toInt(EalError::IdNotFound); }
@@ -684,7 +684,7 @@ int32_t EalMan::GetAttributes(
     const int32_t     length,
     T&                attributes,
     std::vector<T>&   dataset
-    ) const
+    ) const noexcept
 {
     attributes = {};
     if (id < 0 || id >= length) { return toInt(EalError::InvalidId); }
@@ -854,19 +854,19 @@ int32_t EalMan::EalGeometryAttributes(
     return toInt(EalError::OK);
 }
 
-inline bool EalMan::isGDFMdataPlausible() const
+inline bool EalMan::isGDFMdataPlausible() const noexcept
 {
     return std::isfinite(m_data->gdfm.LFRatio);
 }
 
-inline bool EalMan::isDEFLdataPlausible() const
+inline bool EalMan::isDEFLdataPlausible() const noexcept
 {
     return std::isfinite(m_data->defListener.fDistanceFactor)
             && std::isfinite(m_data->defListener.fRolloffFactor)
             && std::isfinite(m_data->defListener.fDopplerFactor);
 }
 
-inline bool EalMan::isDEFEdataPlausible() const
+inline bool EalMan::isDEFEdataPlausible() const noexcept
 {
 #if EAXMANVERSION == 3
     return std::isfinite(m_data->defEnvironment.flEnvironmentSize)
@@ -902,7 +902,7 @@ inline bool EalMan::isDEFEdataPlausible() const
 #endif
 }
 
-inline bool EalMan::isDEFSdataPlausible() const
+inline bool EalMan::isDEFSdataPlausible() const noexcept
 {
 #if EAXMANVERSION == 3
     return std::isfinite(m_data->defSource.fConeXdir)
@@ -934,13 +934,13 @@ inline bool EalMan::isDEFSdataPlausible() const
 }
 
 
-inline bool EalMan::isDEFMdataPlausible() const
+inline bool EalMan::isDEFMdataPlausible() const noexcept
 {
     return std::isfinite(m_data->defObstacle.fLFRatio)
             && std::isfinite(m_data->defObstacle.fRoomRatio);
 }
 
-bool EalMan::isLISPdataPlausible() const
+bool EalMan::isLISPdataPlausible() const noexcept
 {
     bool plausible{true};
     for (const EAXListenerProperties& lp : m_data->environments)
@@ -985,7 +985,7 @@ bool EalMan::isLISPdataPlausible() const
     return plausible;
 }
 
-bool EalMan::isMATAdataPlausible() const
+bool EalMan::isMATAdataPlausible() const noexcept
 {
     bool plausible{true};
     for (const MaterialAttributes& ma : m_data->obstacles)
@@ -998,7 +998,7 @@ bool EalMan::isMATAdataPlausible() const
     return plausible;
 }
 
-bool EalMan::isSRCAdataPlausible() const
+bool EalMan::isSRCAdataPlausible() const noexcept
 {
     bool plausible{true};
     for (const SourceAttributes& sa : m_data->sources)
@@ -1038,7 +1038,7 @@ bool EalMan::isSRCAdataPlausible() const
     return plausible;
 }
 
-bool EalMan::isGEMAdataPlausible() const
+bool EalMan::isGEMAdataPlausible() const noexcept
 {
     bool plausible{true};
     plausible = plausible

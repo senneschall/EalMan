@@ -68,7 +68,7 @@ enum class FourCCreq : uint32_t
 
 struct FourCCTools
 {
-    static constexpr uint32_t fromBytes(const char* p)
+    static constexpr uint32_t fromBytes(const char* p) noexcept
     {
         return
             (uint32_t(static_cast<uint8_t>(p[0]))      ) |
