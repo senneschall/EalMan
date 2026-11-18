@@ -13,7 +13,7 @@
 
 inline static uint32_t to_u32_le(
     const std::array<char, 4>&   a
-    )
+    ) noexcept
 {
     return (uint32_t(static_cast<uint8_t>(a[0]))       ) |
            (uint32_t(static_cast<uint8_t>(a[1])) <<  8 ) |
@@ -28,7 +28,7 @@ inline static float scalarProduct(
     float   bX,
     float   bY,
     float   bZ
-    )
+    ) noexcept
 {
     return (aX * bX + aY * bY + aZ * bZ);
 }
@@ -37,7 +37,7 @@ inline static bool isInFront(
     const EMPoint   point,
     const EMPoint   base,
     const EMPoint   normal
-    )
+    ) noexcept
 {
     /*
      * EaxMan.dll selects Front if scalarProduct >= 0 and Back otherwise
@@ -61,7 +61,7 @@ static bool getIntersectionPoint(
     const EMPoint   coordPlaneBase,
     const EMPoint   vecPlaneNormal,
     EMPoint&        intersection
-    )
+    ) noexcept
 {
     intersection = {};
     float denominator =
@@ -91,7 +91,7 @@ static bool isIntersectInsideDiffbox(
     const uint32_t   boxSide,
     const EMPoint&   dbMin,
     const EMPoint&   dbMax
-    )
+    ) noexcept
 {
     switch (boxSide)
     {
@@ -141,7 +141,7 @@ static bool isIntersectInsideDiffbox(
 
 static void normalize(
     EMPoint&   v
-    )
+    ) noexcept
 {
     float len = sqrtf(scalarProduct(v.fX, v.fY, v.fZ, v.fX, v.fY, v.fZ));
 
@@ -158,7 +158,7 @@ static void normalize(
 static bool compareStringCaseInvariant(
     const std::string&   left,
     const std::string&   right
-    )
+    ) noexcept
 {
     if (left.size() != right.size()) { return false; }
 
@@ -174,7 +174,7 @@ static bool compareStringCaseInvariant(
 int32_t EalMan::getIndexIDfromBSP(
     int32_t&        idx,
     const EMPoint   pos
-    ) const
+    ) const noexcept
 {
     SplitNode node{};
     uint32_t child = m_data->gemaStartID;
@@ -204,7 +204,7 @@ int32_t EalMan::computeDiffraction(
     const uint32_t   boxSide,
     const EMPoint&   boxMin,
     const EMPoint&   boxMax
-    ) const
+    ) const noexcept
 {
     EMPoint edgePoint = intersection;
 
@@ -656,6 +656,8 @@ int32_t EalMan::GetID(
     ) const
 {
     id = {};
+    if (name.size() < 1 || name.size() > 32) { return toInt(EalError::IdNotFound); }
+
     if (!dataset.empty())
     {
 #ifdef CASESENSITIVE
@@ -1195,7 +1197,7 @@ EalMan::~EalMan() = default;
 int32_t EalMan::GetDataSetSize(
     uint32_t&        sizeDataSet,
     const uint32_t   /* flags */
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1364,7 +1366,7 @@ int32_t EalMan::FreeDataSet(
 
 int32_t EalMan::GetListenerAttributes(
     ListenerAttributes&   lstAttributes
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1379,7 +1381,7 @@ int32_t EalMan::GetListenerAttributes(
 int32_t EalMan::GetSourceID(
     const std::string&   srcName,
     int32_t&             srcID
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1387,15 +1389,13 @@ int32_t EalMan::GetSourceID(
         return toInt(EalError::InstanceNotFound);
     }
 
-    srcID = {};
-    if (srcName.size() < 1) { return toInt(EalError::IdNotFound); }
     return GetID(srcName, srcID, m_data->srcNames);
 }
 
 int32_t EalMan::GetSourceAttributes(
     const int32_t       srcID,
     SourceAttributes&   srcAttributes
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1414,7 +1414,7 @@ int32_t EalMan::GetSourceAttributes(
 int32_t EalMan::GetSourceNumInstances(
     const int32_t   srcID,
     int32_t&        srcInstances
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1434,7 +1434,7 @@ int32_t EalMan::GetSourceInstancePos(
     const int32_t   srcID,
     const int32_t   srcInstance,
     EMPoint&        posInstance
-    ) const
+    ) const noexcept
 {
     posInstance = {};
     if (m_empty) { return toInt(EalError::InstanceNotFound); }
@@ -1462,7 +1462,7 @@ int32_t EalMan::GetSourceInstancePos(
 int32_t EalMan::GetEnvironmentID(
     const std::string&   envName,
     int32_t&             envID
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1476,7 +1476,7 @@ int32_t EalMan::GetEnvironmentID(
 int32_t EalMan::GetEnvironmentAttributes(
     const int32_t            envID,
     EAXListenerProperties&   envAttributes
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1495,7 +1495,7 @@ int32_t EalMan::GetEnvironmentAttributes(
 int32_t EalMan::GetMaterialID(
     const std::string&   matName,
     int32_t&             matID
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1509,7 +1509,7 @@ int32_t EalMan::GetMaterialID(
 int32_t EalMan::GetMaterialAttributes(
     const int32_t         matID,
     MaterialAttributes&   matAttributes
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1528,7 +1528,7 @@ int32_t EalMan::GetMaterialAttributes(
 int32_t EalMan::GetGeometrySetID(
     const std::string&   geomName,
     int32_t&             geomID
-    ) const
+    ) const noexcept
 {
     if (m_empty)
     {
@@ -1544,7 +1544,7 @@ int32_t EalMan::GetListenerDynamicAttributes(
     const EMPoint&   lstPos,
     int32_t&         envID,
     const uint32_t   flags
-    )
+    ) noexcept
 {
     envID = {};
     if (m_empty) { return toInt(EalError::InstanceNotFound); }
@@ -1592,7 +1592,7 @@ int32_t EalMan::GetSourceDynamicAttributes(
     float&           srcOcclusionRM,
     EMPoint&         virtPos,
     const uint32_t   flags
-    )
+    ) noexcept
 {
     // defaults
     srcObstruction = {0};

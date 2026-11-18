@@ -24,7 +24,7 @@ private:
     int32_t getIndexIDfromBSP(
         int32_t&        idx,
         const EMPoint   pos
-    ) const;
+    ) const noexcept;
 
     int32_t computeDiffraction(
         const EMPoint&   listener,
@@ -33,7 +33,7 @@ private:
         const uint32_t   boxSide,
         const EMPoint&   boxMin,
         const EMPoint&   boxMax
-        ) const;
+        ) const noexcept;
 
     template <typename T>
     int32_t ReadArrayData(
@@ -156,7 +156,7 @@ public:
     int32_t GetDataSetSize(
             uint32_t&        sizeDataSet,
             const uint32_t   flags
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief method loads an eal file into EalManager and sets it up for usage
@@ -198,7 +198,7 @@ public:
      */
     int32_t GetListenerAttributes(
             ListenerAttributes&   lstAttributes
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief returns the ID for a source given its name
@@ -210,7 +210,7 @@ public:
     int32_t GetSourceID(
             const std::string&   srcName,
             int32_t&             srcID
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief gets the attributes for a source given its ID
@@ -222,7 +222,7 @@ public:
     int32_t GetSourceAttributes(
             const int32_t       srcID,
             SourceAttributes&   srcAttributes
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief gets the number of instances for a source ID
@@ -234,7 +234,7 @@ public:
     int32_t GetSourceNumInstances(
             const int32_t   srcID,
             int32_t&        srcInstances
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief gets the 3D position of an instance for a source ID
@@ -248,7 +248,7 @@ public:
             const int32_t   srcID,
             const int32_t   srcInstance,
             EMPoint&        posInstance
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief returns the ID for an environment given its name
@@ -260,7 +260,7 @@ public:
     int32_t GetEnvironmentID(
             const std::string&   envName,
             int32_t&             envID
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief gets the attributes for an environment given its ID
@@ -272,7 +272,7 @@ public:
     int32_t GetEnvironmentAttributes(
             const int32_t            envID,
             EAXListenerProperties&   envAttributes
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief returns the ID for a material given its name
@@ -284,7 +284,7 @@ public:
     int32_t GetMaterialID(
             const std::string&   matName,
             int32_t&             matID
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief gets the attributes for a material given its ID
@@ -296,7 +296,7 @@ public:
     int32_t GetMaterialAttributes(
             const int32_t         matID,
             MaterialAttributes&   matAttributes
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief returns the ID for a geometry set given its name, because a single eal dataset can contain multiple geometry sets
@@ -308,7 +308,7 @@ public:
     int32_t GetGeometrySetID(
             const std::string&   geomName,
             int32_t&             geomID
-            ) const;
+            ) const noexcept;
 
     /**
      * @brief returns the ID for the environment in which the listener is currently located
@@ -324,7 +324,7 @@ public:
             const EMPoint&   lstPos,
             int32_t&         envID,
             const uint32_t   flags
-            );
+            ) noexcept;
 
     /**
      * @brief returns the attributes that change dynamically for a source, given a geometry set and its position
@@ -350,7 +350,7 @@ public:
             float&           srcOcclusionRM,
             EMPoint&         virtPos,
             const uint32_t   flags
-            );
+            ) noexcept;
 
 #if EAXMANVERSION == 3
     /**

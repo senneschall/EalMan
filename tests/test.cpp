@@ -1,10 +1,47 @@
 #include <gtest/gtest.h>
+
+#include <cmath>
 #include <fstream>
+#include <iomanip>
 #include <istream>
+#include <limits>
+#include <vector>
+
 #include "../src/EalMan.h"
 #include "EalFileContents.h"
 #include "EalFileLstPos.h"
 #include "EalFileSrcPos.h"
+
+std::vector<float> FloatNoexceptOuterLimits
+{
+    -std::numeric_limits<float>::signaling_NaN(),
+    -std::numeric_limits<float>::quiet_NaN(),
+    -std::numeric_limits<float>::infinity(),
+    std::numeric_limits<float>::lowest(),
+    -16777216.0f,
+    16777216.0f,                                               // no decimal places left after that
+    std::numeric_limits<float>::max(),
+    std::numeric_limits<float>::infinity(),
+    std::numeric_limits<float>::quiet_NaN(),
+    std::numeric_limits<float>::signaling_NaN()
+};
+
+std::vector<float> FloatNoexceptWithinLimits
+{
+    -32768.0f,
+    -std::numeric_limits<float>::min(),
+    -std::nextafter(std::numeric_limits<float>::min(), 0.0f),
+    -std::numeric_limits<float>::denorm_min(),
+    -0.0f,
+    0.0f,
+    std::numeric_limits<float>::denorm_min(),                  // lowest denormal
+    std::nextafter(std::numeric_limits<float>::min(), 0.0f),   // highest denormal
+    std::numeric_limits<float>::min(),                         // lowest normal
+    std::nextafter(1.0f, 0.0f),                                // close below 1
+    1.0f,
+    1.0f + std::numeric_limits<float>::epsilon(),              // close above 1
+    32768.0f,                                                  // eal coordinate borders
+};
 
 #pragma region LoadDataSet
 namespace LoadDataSet
@@ -616,6 +653,23 @@ namespace GetSourceAttributes
                 }
             }
         }
+        
+        TEST(UT99EalFiles, GetSourceAttributes_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Turbine.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (int32_t i = 1; i < 32; i++)
+            {
+                int32_t posID = static_cast<int32_t>(1 << (i - 1));
+                int32_t negID = static_cast<int32_t>((0x7FFFFFFF >> i) | 0x80000000);
+                SourceAttributes sa{};
+                int32_t resGLA = man.GetSourceAttributes(posID, sa);
+                EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+                resGLA = man.GetSourceAttributes(negID, sa);
+                EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+            }
+        }
     }
 
     namespace FailingGetSourceAttributesRequests
@@ -777,6 +831,23 @@ namespace GetSourceNumInstances
                 }
             }
         }
+        
+        TEST(UT99EalFiles, GetSourceNumInstances_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Stalwart.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (int32_t i = 0; i < 32; i++)
+            {
+                int32_t posID = static_cast<int32_t>(1 << i);
+                int32_t negID = static_cast<int32_t>((0x7FFFFFFF >> i) | 0x80000000);
+                int32_t sni{};
+                int32_t resGSNI = man.GetSourceNumInstances(posID, sni);
+                EXPECT_EQ(resGSNI, toInt(EalError::InvalidId));
+                resGSNI = man.GetSourceNumInstances(negID, sni);
+                EXPECT_EQ(resGSNI, toInt(EalError::InvalidId));
+            }
+        }
     }
 
     namespace FailingSourceNumInstancesRequests
@@ -853,6 +924,34 @@ namespace GetSourceInstancePos
                         EXPECT_FLOAT_EQ(pos.fY, par.srcPos[i][k].fY);
                         EXPECT_FLOAT_EQ(pos.fZ, par.srcPos[i][k].fZ);
                     }
+                }
+            }
+        }
+        
+        TEST(UT99EalFiles, GetSourceInstancePos_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Morpheus.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (int32_t i = 0; i < 32; i++)
+            {
+                int32_t posID = static_cast<int32_t>(1 << i);
+                EMPoint pos{};
+                int32_t resGSNI = man.GetSourceInstancePos(0, posID, pos);
+                EXPECT_EQ(resGSNI, toInt(EalError::InstanceNotFound));
+            }
+            for (int32_t s = 0; s < 32; s++)
+            {
+                int32_t src = static_cast<int32_t>(1 << s);
+                for (int32_t i = 0; i < 32; i++)
+                {
+                    int32_t posID = static_cast<int32_t>(1 << i);
+                    int32_t negID = static_cast<int32_t>((0x7FFFFFFF >> i) | 0x80000000);
+                    EMPoint pos{};
+                    int32_t resGSNI = man.GetSourceInstancePos(src, posID, pos);
+                    EXPECT_EQ(resGSNI, toInt(EalError::InvalidId));
+                    resGSNI = man.GetSourceInstancePos(src, negID, pos);
+                    EXPECT_EQ(resGSNI, toInt(EalError::InvalidId));
                 }
             }
         }
@@ -1042,6 +1141,23 @@ namespace GetEnvironmentAttributes
                     EXPECT_NEAR(ea.flAirAbsorptionHF, par.envp[i].flAirAbsorptionHF, std::abs(ea.flAirAbsorptionHF + par.envp[i].flAirAbsorptionHF) / 2000);
                     EXPECT_EQ(ea.dwFlags, par.envp[i].dwFlags);
                 }
+            }
+        }
+        
+        TEST(UT99EalFiles, GetEnvironmentAttributes_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Zeto.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (int32_t i = 1; i < 32; i++)
+            {
+                int32_t posID = static_cast<int32_t>(1 << (i - 1));
+                int32_t negID = static_cast<int32_t>((0x7FFFFFFF >> i) | 0x80000000);
+                EAXListenerProperties ea{};
+                int32_t resGLA = man.GetEnvironmentAttributes(posID, ea);
+                EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
+                resGLA = man.GetEnvironmentAttributes(negID, ea);
+                EXPECT_EQ(resGLA, toInt(EalError::InvalidId));
             }
         }
     }
@@ -1240,6 +1356,23 @@ namespace GetMaterialAttributes
                 }
             }
         }
+        
+        TEST(UT99EalFiles, GetMaterialAttributes_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Phobos.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (int32_t i = 1; i < 32; i++)
+            {
+                int32_t posID = static_cast<int32_t>(1 << (i - 1));
+                int32_t negID = static_cast<int32_t>((0x7FFFFFFF >> i) | 0x80000000);
+                MaterialAttributes ma{};
+                int32_t resGMA = man.GetMaterialAttributes(posID, ma);
+                EXPECT_EQ(resGMA, toInt(EalError::InvalidId));
+                resGMA = man.GetMaterialAttributes(negID, ma);
+                EXPECT_EQ(resGMA, toInt(EalError::InvalidId));
+            }
+        }
     }
 
     namespace FailingGetMaterialAttributesRequests
@@ -1403,6 +1536,39 @@ namespace GetListenerDynamicAttributes
                 }
             }
         }
+        
+        TEST(UT99EalFiles, GetListenerDynamicAttributes_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Zeto.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (float x : FloatNoexceptOuterLimits)
+            {
+                for (float y : FloatNoexceptOuterLimits)
+                {
+                    for (float z : FloatNoexceptOuterLimits)
+                    {
+                        int32_t envID{};
+                        EMPoint pos{x, y, z};
+                        int32_t resGDA = man.GetListenerDynamicAttributes(0, pos, envID, 0);
+                        EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
+                    }
+                }
+            }
+            for (float x : FloatNoexceptWithinLimits)
+            {
+                for (float y : FloatNoexceptWithinLimits)
+                {
+                    for (float z : FloatNoexceptWithinLimits)
+                    {
+                        int32_t envID{};
+                        EMPoint pos{x, y, z};
+                        int32_t resGDA = man.GetListenerDynamicAttributes(0, pos, envID, 0);
+                        EXPECT_EQ(resGDA, toInt(EalError::OK));
+                    }
+                }
+            }
+        }
     }
 
     namespace FailingGetListenerDynamicAttributesRequests
@@ -1557,6 +1723,49 @@ namespace GetSourceDynamicAttributes
                 EXPECT_FLOAT_EQ(vpkt.fX, data.virtPos.fX);
                 EXPECT_FLOAT_EQ(vpkt.fY, data.virtPos.fY);
                 EXPECT_FLOAT_EQ(vpkt.fZ, data.virtPos.fZ);
+            }
+        }
+        
+        TEST(UT99EalFiles, GetSourceDynamicAttributes_noexcept)
+        {
+            EalMan man;
+            int32_t resLoad = man.LoadDataSet("DM-Zeto.eal", 0);
+            ASSERT_EQ(resLoad, toInt(EalError::OK));
+            for (float x : FloatNoexceptOuterLimits)
+            {
+                for (float y : FloatNoexceptOuterLimits)
+                {
+                    for (float z : FloatNoexceptOuterLimits)
+                    {
+                        EMPoint pos{x, y, z};
+                        int32_t obs{};
+                        float olf{};
+                        int32_t occ{};
+                        float clf{};
+                        float orm{};
+                        EMPoint vPos{};
+                        int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
+                        EXPECT_EQ(resGDA, toInt(EalError::IdNotFound));
+                    }
+                }
+            }
+            for (float x : FloatNoexceptWithinLimits)
+            {
+                for (float y : FloatNoexceptWithinLimits)
+                {
+                    for (float z : FloatNoexceptWithinLimits)
+                    {
+                        EMPoint pos{x, y, z};
+                        int32_t obs{};
+                        float olf{};
+                        int32_t occ{};
+                        float clf{};
+                        float orm{};
+                        EMPoint vPos{};
+                        int32_t resGDA = man.GetSourceDynamicAttributes(0, pos, obs, olf, occ, clf, orm, vPos, 0);
+                        EXPECT_EQ(resGDA, toInt(EalError::OK));
+                    }
+                }
             }
         }
     }
